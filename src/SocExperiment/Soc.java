@@ -758,9 +758,9 @@ public class Soc {
 		
 		// Initial Setting
 		Soc d = new Soc();
-		d.dataRead("com-dblp.ungraph.txt");
+		d.dataRead("com-dblp.ungraph - small.txt");
 		d.setNodeset();
-		d.ReadPropagate("C:\\Users\\mosu\\Desktop\\prop-O.txt");  //set propagation probability
+		d.ReadPropagate("prop.txt");  //set propagation probability
 		d.setInEdgeGraph();  //set in edge weight from propagation graph
 		d.info();
 		/* Main Function */
