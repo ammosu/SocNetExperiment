@@ -528,7 +528,7 @@ public class Soc {
 		this.actResult.clear();
 	}
 	
-	/*public void showHash()
+	public void showHash()
 	{
 		if(this.BFSTables.size()>=2)
 		{
@@ -549,14 +549,14 @@ public class Soc {
 			{
 				i++;
 				int key = it2.next();
-				System.out.println("Key "+i+" :"+key+" \nvalue:"+this.BFSTables.get(2).get(key).toString());
+				System.out.println("Key "+i+" :"+key+" \nvalue :"+this.BFSTables.get(2).get(key).toString());
 			}
 		}
 		else
 		{
 			System.out.println("Table Not Build");
 		}
-	}*/
+	}/**/
 	
 	public double acceptanceTimes(int targetNode) //return acceptance times
 	{
@@ -633,7 +633,7 @@ public class Soc {
 			
 			this.BFSTables.put(i, this.BFSresult);
 			this.BFSresult = new Hashtable<Integer, Set<Integer>>();
-			System.out.println("Table "+i+" is Created");
+			//System.out.println("Table "+i+" is Created");
 		}
 		endTime = System.currentTimeMillis();
 		totalTime = endTime - startTime;
@@ -684,7 +684,7 @@ public class Soc {
 			}
 			seeds.add(this.nodeSet.get(maxNodeID));
 			if(seeds.size()==top_k)
-				System.out.println(maxValue);
+				System.out.println("\nExpected times:"+maxValue);
 			maxNodeID = -1;
 			maxValue = 0.0;
 		}
@@ -752,6 +752,8 @@ public class Soc {
 		System.out.println("-------------------------");
 	}
 	
+	
+	
 	public static void main(String[] args) throws IOException
 	{
 		double startTime, endTime, totalTime;
@@ -764,15 +766,20 @@ public class Soc {
 		d.setInEdgeGraph();  //set in edge weight from propagation graph
 		d.info();
 		/* Main Function */
-		System.out.print("Timing\n");
+		
 		startTime = System.currentTimeMillis();
 		//d.showNodeResult(0);
 		
-		//System.out.println("NBR: "+d.getNeibh(0)+"\n"+d.getNeibhPropGraph(0));
-		//d.coNbr(0, 2);
+		int influenceTargetID = 0;
+		System.out.println
+				("Our Target: "+influenceTargetID
+				+"\nTarget Neighbors: "+d.getNeibh(influenceTargetID)
+				+"\nCorresponding Propagation Probability"+d.getNeibhPropGraph(influenceTargetID)
+				);
+		
 		//Seed Setting
 		ArrayList<Integer> seeds = new ArrayList<Integer>();
-		//seeds.add(403092);
+		//seeds.add(4519);
 		//seeds.add(33126);
 		/*seeds.add(274042);
 		
@@ -782,18 +789,21 @@ public class Soc {
 		//MonteCarlo simulation
 		
 		*/
-		seeds = d.gr(1, 0, 1000);
-		System.out.println("\nGreedy algorithm:\n" + seeds.toString());
+		seeds = d.gr(5, 0, 1000);
+		System.out.println("\nGreedy algorithm:\n"+"Seed: " + seeds.toString());
+		
+		//d.showHash();
 		
 		endTime = System.currentTimeMillis();
 		totalTime = endTime - startTime;
 		System.out.println("Execution Time: " + totalTime/1000+" sec");
-		
-		
+		/**/
 		//evaluation
 		
 		d.setSeed(seeds);  //set our seed result 
-		System.out.println("Expected Times: " + d.MC_times(10000,0));
-
+		
+		System.out.println( d.MC_times(10000,0));
+		
+		
 	}
 }
