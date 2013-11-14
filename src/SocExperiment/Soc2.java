@@ -5,13 +5,13 @@ import java.util.*;
 import java.io.*;
 //import java.lang.Math;
 
-public class Soc {
+public class Soc2 {
 
 	private Hashtable<Integer, MonteCarlo> Graph = new Hashtable<Integer, MonteCarlo>(); 
-	private Hashtable<Integer, ArrayList<Integer>> GraphTable = new Hashtable<Integer, ArrayList<Integer>>(); // Graph
+	//private Hashtable<Integer, ArrayList<Integer>> GraphTable = new Hashtable<Integer, ArrayList<Integer>>(); // Graph
 	//private int MaxNode;
-	private Hashtable<Integer, ArrayList<Double>> inEdgeGraph = new Hashtable<Integer, ArrayList<Double>>(); // in-edge = -1/log(propagte)
-	private Hashtable<Integer, ArrayList<Double>> propagateGraph = new Hashtable<Integer, ArrayList<Double>>(); // propagation probability
+	//private Hashtable<Integer, ArrayList<Double>> inEdgeGraph = new Hashtable<Integer, ArrayList<Double>>(); // in-edge = -1/log(propagte)
+	//private Hashtable<Integer, ArrayList<Double>> propagateGraph = new Hashtable<Integer, ArrayList<Double>>(); // propagation probability
 	private ArrayList<Integer> nodeSet = new ArrayList<Integer>();  // all nodes
 	//private ArrayList<Integer> shortestPre = new ArrayList<Integer>(); //shortest path tree prefix
 	private Hashtable<Integer, ArrayList<Boolean>> actResult = new Hashtable<Integer, ArrayList<Boolean>>(); // random process active or inactive
@@ -20,23 +20,25 @@ public class Soc {
 	private Hashtable<Integer, Hashtable<Integer, Set<Integer>>> BFSTables = new Hashtable<Integer, Hashtable<Integer, Set<Integer>>>(); 
 	
 	
+	
 	public ArrayList<Integer> getNodeSet()
 	{
 		return this.nodeSet;
 	}
 	public ArrayList<Integer> getNeibh(Integer a)
 	{
-		return this.GraphTable.get(a);
+		return this.Graph.get(a).neighborID;
+		//return this.GraphTable.get(a);
 	}
 	
 	public ArrayList<Double> getNeibhInEdge(Integer a)
 	{
-		return this.inEdgeGraph.get(a);
+		return this.Graph.get(a).in_Edge;
 	}
 	
 	public ArrayList<Double> getNeibhPropGraph(Integer a)
 	{
-		return this.propagateGraph.get(a);
+		return this.Graph.get(a).propability;
 	}
 	
 	public void setSeed(ArrayList<Integer> seeds)
@@ -57,7 +59,7 @@ public class Soc {
 				String s = br.readLine();
 				for(int i = 0; i < s.split(" ")[1].split(",").length; i++)
 					value.add(Double.parseDouble(s.split(" ")[1].split(",")[i]));
-				this.propagateGraph.put(Integer.parseInt(s.split(" ")[0]), value);
+				this.Graph.get(Integer.parseInt(s.split(" ")[0])).propability = value;
 			}
 			br.close();
 			fr.close();
@@ -73,12 +75,12 @@ public class Soc {
 		try {
 			fw = new FileWriter(propfile);
 			BufferedWriter bw = new BufferedWriter(fw);
-			for(int i = 0; i < this.propagateGraph.size();i++)
+			for(int i = 0; i < this.Graph.size();i++)
 			{
 				bw.write(this.nodeSet.get(i)+" ");
-				for(int j = 0; j < this.propagateGraph.get(this.nodeSet.get(i)).size()-1;j++)
-					bw.write(this.propagateGraph.get(this.nodeSet.get(i)).get(j)+",");
-				bw.write(this.propagateGraph.get(this.nodeSet.get(i)).get(this.propagateGraph.get(this.nodeSet.get(i)).size()-1).toString());
+				for(int j = 0; j < this.Graph.get(this.nodeSet.get(i)).size()-1;j++)
+					bw.write(this.Graph.get(this.nodeSet.get(i)).propability.get(j)+",");
+				bw.write(this.Graph.get(this.nodeSet.get(i)).propability.get(this.Graph.get(this.nodeSet.get(i)).propability.size()-1).toString());
 				bw.newLine();
 			}
 			bw.close();
@@ -96,12 +98,12 @@ public class Soc {
 		try {
 			fw = new FileWriter(propfile + "uniform");
 			BufferedWriter bw = new BufferedWriter(fw);
-			for(int i = 0; i < this.propagateGraph.size();i++)
+			for(int i = 0; i < this.Graph.size();i++)
 			{
 				bw.write(this.nodeSet.get(i)+" ");
-				for(int j = 0; j < this.propagateGraph.get(this.nodeSet.get(i)).size()-1;j++)
-					bw.write(this.propagateGraph.get(this.nodeSet.get(i)).get(j)+",");
-				bw.write(this.propagateGraph.get(this.nodeSet.get(i)).get(this.propagateGraph.get(this.nodeSet.get(i)).size()-1).toString());
+				for(int j = 0; j < this.Graph.get(this.nodeSet.get(i)).propability.size()-1;j++)
+					bw.write(this.Graph.get(this.nodeSet.get(i)).propability.get(j)+",");
+				bw.write(this.Graph.get(this.nodeSet.get(i)).propability.get(this.Graph.get(this.nodeSet.get(i)).propability.size()-1).toString());
 				bw.newLine();
 			}
 			bw.close();
@@ -135,7 +137,8 @@ public class Soc {
 		{
 			if(this.actResult.get(nodeID).get(i) == true)
 			{
-				arr.add(this.GraphTable.get(nodeID).get(i));
+				//arr.add(this.GraphTable.get(nodeID).get(i));
+				arr.add(this.Graph.get(nodeID).neighborID.get(i));
 			}
 		}
 		return arr;
@@ -275,49 +278,49 @@ public class Soc {
 	public void putUpdate(Integer key, Integer value) // for all lines put or update hash
 	{
 		ArrayList<Integer> updatelist;
-		if(GraphTable.containsKey(key)) //contain key -> update key
+		if(this.Graph.containsKey(key)) //contain key -> update key
 		{
 			updatelist = new ArrayList<Integer>();
-			updatelist = this.GraphTable.get(key);
+			updatelist = this.Graph.get(key).neighborID;
 			updatelist.add(value);
-			this.GraphTable.remove(key);
-			this.GraphTable.put(key, updatelist);
+			this.Graph.remove(key);
+			this.Graph.put(key, new MonteCarlo(updatelist));
 			
-			if(this.GraphTable.containsKey(value)) // contain value -> update value
+			if(this.Graph.containsKey(value)) // contain value -> update value
 			{
 				updatelist = new ArrayList<Integer>();
-				updatelist = this.GraphTable.get(value);
+				updatelist = this.Graph.get(value).neighborID;
 				updatelist.add(key);
-				this.GraphTable.remove(value);
-				this.GraphTable.put(value, updatelist);
+				this.Graph.remove(value);
+				this.Graph.put(value, new MonteCarlo(updatelist));
 			}
 			else  // no value -> create value
 			{
 				updatelist = new ArrayList<Integer>();
 				updatelist.add(key);
-				this.GraphTable.remove(value);
-				this.GraphTable.put(value, updatelist);
+				this.Graph.remove(value);
+				this.Graph.put(value, new MonteCarlo(updatelist));
 			}
 		}
-		else if(!this.GraphTable.containsKey(value)) //no key -> put key value & no value -> put value key
+		else if(!this.Graph.containsKey(value)) //no key -> put key value & no value -> put value key
 		{
 			updatelist = new ArrayList<Integer>();
 			updatelist.add(key);
-			this.GraphTable.put(value, updatelist);
+			this.Graph.put(value, new MonteCarlo(updatelist));
 			updatelist = new ArrayList<Integer>();
 			updatelist.add(value);
-			this.GraphTable.put(key, updatelist);
+			this.Graph.put(key, new MonteCarlo(updatelist));
 		}
 		else	//no key -> put key value & update value
 		{
 			updatelist = new ArrayList<Integer>();
 			updatelist.add(value);
-			this.GraphTable.put(key, updatelist);
+			this.Graph.put(key, new MonteCarlo(updatelist));
 			updatelist = new ArrayList<Integer>();
-			updatelist = this.GraphTable.get(value);
+			updatelist = this.Graph.get(value).neighborID;
 			updatelist.add(key);
-			this.GraphTable.remove(value);
-			this.GraphTable.put(value, updatelist);
+			this.Graph.remove(value);
+			this.Graph.put(value, new MonteCarlo(updatelist));
 			
 		}
 	}
@@ -381,7 +384,7 @@ public class Soc {
 	
 	public void setNodeset()  //set node set from hashtable
 	{
-		Set<Integer> set = this.GraphTable.keySet();
+		Set<Integer> set = this.Graph.keySet();
 		Iterator<Integer> it = set.iterator();
 		
 		while(it.hasNext())
@@ -399,12 +402,12 @@ public class Soc {
 		{
 			list = new ArrayList<Double>();
 			value = new ArrayList<Double>();
-			list = this.propagateGraph.get(this.nodeSet.get(i));
+			list = this.Graph.get(this.nodeSet.get(i)).propability;
 			for(int j = 0; j < list.size(); j++)
 			{
-				value.add(-1/Math.log(this.propagateGraph.get(this.nodeSet.get(i)).get(j)));
+				value.add(-1/Math.log(this.Graph.get(this.nodeSet.get(i)).propability.get(j)));
 			}
-			this.inEdgeGraph.put(this.nodeSet.get(i), value);
+			this.Graph.get(this.nodeSet.get(i)).in_Edge = value;
 		}
 	}
 	
@@ -413,10 +416,10 @@ public class Soc {
 		ArrayList<Double> list;
 		for(int i = 0; i<this.nodeSet.size(); i++)
 		{
-			int a = this.GraphTable.get(this.nodeSet.get(i)).size();
+			int a = this.Graph.get(this.nodeSet.get(i)).size();
 			list = new ArrayList<Double>();
 			list = this.createRandomDouble(a);
-			this.propagateGraph.put(this.nodeSet.get(i), list);
+			this.Graph.get(this.nodeSet.get(i)).propability = list;
 		}
 	}
 	
@@ -492,7 +495,7 @@ public class Soc {
 			propArr = new ArrayList<Double>();
 			propResult = new ArrayList<Double>();
 			resultEdge = new ArrayList<Boolean>();
-			propArr = this.propagateGraph.get(this.nodeSet.get(i));
+			propArr = this.Graph.get(this.nodeSet.get(i)).propability;
 			propResult = createRandomDouble(propArr.size());
 			for(int j = 0; j < propArr.size(); j++)
 			{
@@ -549,7 +552,7 @@ public class Soc {
 	{
 		double acceptanceTimes = 0.0;
 		ArrayList<Integer> Nbr = new ArrayList<Integer>();
-		Nbr = this.GraphTable.get(targetNode);
+		Nbr = this.Graph.get(targetNode).neighborID;
 		ArrayList<Boolean> arr = new ArrayList<Boolean>();
 		for(int i = 0; i < Nbr.size(); i++)
 		{
@@ -719,8 +722,8 @@ public class Soc {
 	public void coNbr(int node1, int node2) //print common neighbor
 	{
 		ArrayList<Integer> co = new ArrayList<Integer>();
-		ArrayList<Integer> nb1 = this.GraphTable.get(node1);
-		ArrayList<Integer> nb2 = this.GraphTable.get(node2);
+		ArrayList<Integer> nb1 = this.Graph.get(node1).neighborID;
+		ArrayList<Integer> nb2 = this.Graph.get(node2).neighborID;
 		co.addAll(nb1);
 		co.retainAll(nb2);
 		System.out.println("(N1, N2) = ("+node1+", "+node2+")"+"\ncoNbr:"+co.toString());
@@ -733,7 +736,7 @@ public class Soc {
 		int edgesize = 0;
 		for(int i = 0; i<this.nodeSet.size();i++)
 		{
-			edgesize += this.GraphTable.get(this.nodeSet.get(i)).size();
+			edgesize += this.Graph.get(this.nodeSet.get(i)).size();
 		}
 		System.out.println("Edge Size: "+ edgesize);
 		System.out.println("-------------------------");
