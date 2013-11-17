@@ -806,7 +806,7 @@ public class Soc2 {
 		//MonteCarlo simulation
 		
 		*/
-		seeds = d.gr(k, 0, 1000);
+		seeds = d.gr(k, influenceTargetID, 1000);
 		System.out.println("\nGreedy algorithm:\n"+"Seed: " + seeds.toString());
 		
 		//d.showHash();
@@ -819,7 +819,7 @@ public class Soc2 {
 		
 		d.setSeed(seeds);  //set our seed result 
 		
-		//System.out.println( d.MC_times(10000,0));
+		System.out.println( d.MC_times(10000,0));
 		
 		}
 	}
