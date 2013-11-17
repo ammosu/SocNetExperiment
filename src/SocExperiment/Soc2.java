@@ -3,19 +3,13 @@ package SocExperiment;
 
 import java.util.*;
 import java.io.*;
-//import java.lang.Math;
+
 
 public class Soc2 {
 
-	private Hashtable<Integer, MonteCarlo> Graph = new Hashtable<Integer, MonteCarlo>(); 
-	//private Hashtable<Integer, ArrayList<Integer>> GraphTable = new Hashtable<Integer, ArrayList<Integer>>(); // Graph
-	//private int MaxNode;
-	//private Hashtable<Integer, ArrayList<Double>> inEdgeGraph = new Hashtable<Integer, ArrayList<Double>>(); // in-edge = -1/log(propagte)
-	//private Hashtable<Integer, ArrayList<Double>> propagateGraph = new Hashtable<Integer, ArrayList<Double>>(); // propagation probability
+	private Hashtable<Integer, MonteCarlo> Graph = new Hashtable<Integer, MonteCarlo>(); // Graph
 	private ArrayList<Integer> nodeSet = new ArrayList<Integer>();  // all nodes
-	//private ArrayList<Integer> shortestPre = new ArrayList<Integer>(); //shortest path tree prefix
-	private Hashtable<Integer, ArrayList<Boolean>> actResult = new Hashtable<Integer, ArrayList<Boolean>>(); // random process active or inactive
-	private ArrayList<Integer> seedSet = new ArrayList<Integer>();
+	private ArrayList<Integer> seedSet = new ArrayList<Integer>();  // seeds
 	private Hashtable<Integer, Set<Integer>> BFSresult = new Hashtable<Integer, Set<Integer>>(); // all possible influence path 
 	private Hashtable<Integer, Hashtable<Integer, Set<Integer>>> BFSTables = new Hashtable<Integer, Hashtable<Integer, Set<Integer>>>(); 
 	
@@ -38,7 +32,7 @@ public class Soc2 {
 	
 	public ArrayList<Double> getNeibhPropGraph(Integer a)
 	{
-		return this.Graph.get(a).propability;
+		return this.Graph.get(a).probability;
 	}
 	
 	public void setSeed(ArrayList<Integer> seeds)
@@ -59,7 +53,7 @@ public class Soc2 {
 				String s = br.readLine();
 				for(int i = 0; i < s.split(" ")[1].split(",").length; i++)
 					value.add(Double.parseDouble(s.split(" ")[1].split(",")[i]));
-				this.Graph.get(Integer.parseInt(s.split(" ")[0])).propability = value;
+				this.Graph.get(Integer.parseInt(s.split(" ")[0])).probability = value;
 			}
 			br.close();
 			fr.close();
@@ -79,8 +73,8 @@ public class Soc2 {
 			{
 				bw.write(this.nodeSet.get(i)+" ");
 				for(int j = 0; j < this.Graph.get(this.nodeSet.get(i)).size()-1;j++)
-					bw.write(this.Graph.get(this.nodeSet.get(i)).propability.get(j)+",");
-				bw.write(this.Graph.get(this.nodeSet.get(i)).propability.get(this.Graph.get(this.nodeSet.get(i)).propability.size()-1).toString());
+					bw.write(this.Graph.get(this.nodeSet.get(i)).probability.get(j)+",");
+				bw.write(this.Graph.get(this.nodeSet.get(i)).probability.get(this.Graph.get(this.nodeSet.get(i)).probability.size()-1).toString());
 				bw.newLine();
 			}
 			bw.close();
@@ -101,9 +95,9 @@ public class Soc2 {
 			for(int i = 0; i < this.Graph.size();i++)
 			{
 				bw.write(this.nodeSet.get(i)+" ");
-				for(int j = 0; j < this.Graph.get(this.nodeSet.get(i)).propability.size()-1;j++)
-					bw.write(this.Graph.get(this.nodeSet.get(i)).propability.get(j)+",");
-				bw.write(this.Graph.get(this.nodeSet.get(i)).propability.get(this.Graph.get(this.nodeSet.get(i)).propability.size()-1).toString());
+				for(int j = 0; j < this.Graph.get(this.nodeSet.get(i)).probability.size()-1;j++)
+					bw.write(this.Graph.get(this.nodeSet.get(i)).probability.get(j)+",");
+				bw.write(this.Graph.get(this.nodeSet.get(i)).probability.get(this.Graph.get(this.nodeSet.get(i)).probability.size()-1).toString());
 				bw.newLine();
 			}
 			bw.close();
@@ -132,15 +126,20 @@ public class Soc2 {
 	
 	public Set<Integer> activatedNbr(int nodeID) //activated neighbor
 	{
+		ArrayList<Integer> a = this.Graph.get(nodeID).activeNbr();
 		Set<Integer> arr = new HashSet<Integer>();
-		for(int i = 0 ; i< this.actResult.get(nodeID).size(); i++)
+		for(int i = 0 ; i< a.size(); i++)
 		{
-			if(this.actResult.get(nodeID).get(i) == true)
+			arr.add(a.get(i));
+		}
+		/*for(int i = 0 ; i< this.Graph.get(nodeID).size(); i++)
+		{
+			if(this.Graph.get(nodeID).actResult.get(i) == true)
 			{
 				//arr.add(this.GraphTable.get(nodeID).get(i));
 				arr.add(this.Graph.get(nodeID).neighborID.get(i));
 			}
-		}
+		}*/
 		return arr;
 	}
 	
@@ -402,10 +401,10 @@ public class Soc2 {
 		{
 			list = new ArrayList<Double>();
 			value = new ArrayList<Double>();
-			list = this.Graph.get(this.nodeSet.get(i)).propability;
+			list = this.Graph.get(this.nodeSet.get(i)).probability;
 			for(int j = 0; j < list.size(); j++)
 			{
-				value.add(-1/Math.log(this.Graph.get(this.nodeSet.get(i)).propability.get(j)));
+				value.add(-1/Math.log(this.Graph.get(this.nodeSet.get(i)).probability.get(j)));
 			}
 			this.Graph.get(this.nodeSet.get(i)).in_Edge = value;
 		}
@@ -419,7 +418,7 @@ public class Soc2 {
 			int a = this.Graph.get(this.nodeSet.get(i)).size();
 			list = new ArrayList<Double>();
 			list = this.createRandomDouble(a);
-			this.Graph.get(this.nodeSet.get(i)).propability = list;
+			this.Graph.get(this.nodeSet.get(i)).probability = list;
 		}
 	}
 	
@@ -495,7 +494,7 @@ public class Soc2 {
 			propArr = new ArrayList<Double>();
 			propResult = new ArrayList<Double>();
 			resultEdge = new ArrayList<Boolean>();
-			propArr = this.Graph.get(this.nodeSet.get(i)).propability;
+			propArr = this.Graph.get(this.nodeSet.get(i)).probability;
 			propResult = createRandomDouble(propArr.size());
 			for(int j = 0; j < propArr.size(); j++)
 			{
@@ -506,8 +505,8 @@ public class Soc2 {
 			}
 			
 			
-			this.actResult.put(this.nodeSet.get(i), resultEdge);
-			
+			this.Graph.get(this.nodeSet.get(i)).actResult = resultEdge;
+			this.Graph.get(this.nodeSet.get(i)).actResult.trimToSize();
 		}
 	}
 	
@@ -515,7 +514,11 @@ public class Soc2 {
 	
 	public void clearActResult()
 	{
-		this.actResult.clear();
+		for(int i = 0; i < this.Graph.size(); i++)
+		{
+			this.Graph.get(this.nodeSet.get(i)).actResult.clear();
+			this.Graph.get(this.nodeSet.get(i)).actResult.trimToSize();
+		}
 	}
 	
 	public void showHash()
@@ -561,7 +564,7 @@ public class Soc2 {
 		
 		for(int i = 0; i < arr.size(); i++)
 		{
-			if(this.actResult.get(targetNode).get(i) && arr.get(i))
+			if(this.Graph.get(targetNode).actResult.get(i) && arr.get(i))
 				acceptanceTimes += 1.0;
 		}
 		
@@ -741,30 +744,54 @@ public class Soc2 {
 		System.out.println("Edge Size: "+ edgesize);
 		System.out.println("-------------------------");
 	}
-	
+	public void trim()
+	{
+		for(int i = 0; i < this.Graph.size(); i++)
+		{
+			this.Graph.get(this.nodeSet.get(i)).MonteCarlo_trim();
+		}
+	}
 	
 	
 	public static void main(String[] args) throws IOException
 	{
+		if(args.length > 4 )
+			System.out.println("Too many args, your args' length : "+args.length+"\nPlease enter: TargetID Network_data Propagate_data");
+		else
+		{
+			int influenceTargetID = 0; //default target
+			if(args.length >= 1)
+				influenceTargetID = Integer.parseInt((args[0]));
+			String network = "com-dblp.ungraph - small.txt" , propnetwork = "prop.txt"; //default data
+			if(args.length >= 2)
+				network = args[1];
+			if(args.length == 3)
+				propnetwork = args[2];
+			int k = 1; //default
+			if(args.length == 4)
+				k = Integer.parseInt(args[3]);
+		
 		double startTime, endTime, totalTime;
 		
 		// Initial Setting
-		Soc d = new Soc();
-		d.dataRead("com-dblp.ungraph - small.txt");
+		Soc2 d = new Soc2();
+		d.dataRead(network);
 		d.setNodeset();
-		d.ReadPropagate("prop.txt");  //set propagation probability
+		d.ReadPropagate(propnetwork);  //set propagation probability
 		d.setInEdgeGraph();  //set in edge weight from propagation graph
+		d.trim();
 		d.info();
 		/* Main Function */
 		
 		startTime = System.currentTimeMillis();
 		//d.showNodeResult(0);
 		
-		int influenceTargetID = 0;
+		// = 0;
 		System.out.println
 				("Our Target: "+influenceTargetID
-				+"\nTarget Neighbors: "+d.getNeibh(influenceTargetID)
-				+"\nCorresponding Propagation Probability"+d.getNeibhPropGraph(influenceTargetID)
+				+"\n\nTarget Neighbors: "+d.getNeibh(influenceTargetID)
+				+"\n\nCorresponding Propagation Probability"+d.getNeibhPropGraph(influenceTargetID)
+				+"\n ---- Find "+k+"-Seeds ----"
 				);
 		
 		//Seed Setting
@@ -779,7 +806,7 @@ public class Soc2 {
 		//MonteCarlo simulation
 		
 		*/
-		seeds = d.gr(5, 0, 1000);
+		seeds = d.gr(k, 0, 1000);
 		System.out.println("\nGreedy algorithm:\n"+"Seed: " + seeds.toString());
 		
 		//d.showHash();
@@ -792,8 +819,8 @@ public class Soc2 {
 		
 		d.setSeed(seeds);  //set our seed result 
 		
-		System.out.println( d.MC_times(10000,0));
+		//System.out.println( d.MC_times(10000,0));
 		
-		
+		}
 	}
 }

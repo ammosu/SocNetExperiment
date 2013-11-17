@@ -747,9 +747,9 @@ public class Soc {
 		
 		// Initial Setting
 		Soc d = new Soc();
-		d.dataRead("com-dblp.ungraph - small.txt");
+		d.dataRead("C:\\Users\\mosu\\Desktop\\com-dblp.ungraph.txt");
 		d.setNodeset();
-		d.ReadPropagate("prop.txt");  //set propagation probability
+		d.ReadPropagate("C:\\Users\\mosu\\Desktop\\prop-O.txt");  //set propagation probability
 		d.setInEdgeGraph();  //set in edge weight from propagation graph
 		d.info();
 		/* Main Function */
@@ -766,7 +766,7 @@ public class Soc {
 		
 		//Seed Setting
 		ArrayList<Integer> seeds = new ArrayList<Integer>();
-		//seeds.add(4519);
+		seeds.add(2);
 		//seeds.add(33126);
 		/*seeds.add(274042);
 		
@@ -776,7 +776,7 @@ public class Soc {
 		//MonteCarlo simulation
 		
 		*/
-		seeds = d.gr(5, 0, 1000);
+		//seeds = d.gr(1, 0, 1000);
 		System.out.println("\nGreedy algorithm:\n"+"Seed: " + seeds.toString());
 		
 		//d.showHash();
