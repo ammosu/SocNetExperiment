@@ -51,8 +51,9 @@ public class Soc2 {
 			{
 				ArrayList<Double> value = new ArrayList<Double>();
 				String s = br.readLine();
-				for(int i = 0; i < s.split(" ")[1].split(",").length; i++)
-					value.add(Double.parseDouble(s.split(" ")[1].split(",")[i]));
+				String str[] = s.split(" ")[1].split(",");
+				for(int i = 0; i < str.length; i++)
+					value.add(Double.parseDouble(str[i]));
 				this.Graph.get(Integer.parseInt(s.split(" ")[0])).probability = value;
 			}
 			br.close();
@@ -652,6 +653,7 @@ public class Soc2 {
 		
 		
 		createBFSTables(times, targetID);
+		showHash();
 		
 		double maxValue = 0.0;
 		int maxNodeID = -1;
@@ -765,37 +767,37 @@ public class Soc2 {
 			String network = "com-dblp.ungraph - small.txt" , propnetwork = "prop.txt"; //default data
 			if(args.length >= 2)
 				network = args[1];
-			if(args.length == 3)
+			if(args.length >= 3)
 				propnetwork = args[2];
 			int k = 1; //default
 			if(args.length == 4)
 				k = Integer.parseInt(args[3]);
 		
-		double startTime, endTime, totalTime;
+			double startTime, endTime, totalTime;
 		
-		// Initial Setting
-		Soc2 d = new Soc2();
-		d.dataRead(network);
-		d.setNodeset();
-		d.ReadPropagate(propnetwork);  //set propagation probability
-		d.setInEdgeGraph();  //set in edge weight from propagation graph
-		d.trim();
-		d.info();
+			// Initial Setting
+			Soc2 d = new Soc2();
+			d.dataRead(network);
+			d.setNodeset();
+			d.ReadPropagate(propnetwork);  //set propagation probability
+			d.setInEdgeGraph();  //set in edge weight from propagation graph
+			d.trim();
+			d.info();
 		/* Main Function */
 		
-		startTime = System.currentTimeMillis();
+			startTime = System.currentTimeMillis();
 		//d.showNodeResult(0);
 		
 		// = 0;
-		System.out.println
+			System.out.println
 				("Our Target: "+influenceTargetID
 				+"\n\nTarget Neighbors: "+d.getNeibh(influenceTargetID)
 				+"\n\nCorresponding Propagation Probability"+d.getNeibhPropGraph(influenceTargetID)
-				+"\n ---- Find "+k+"-Seeds ----"
+				+"\n\n ---- Find "+k+"-Seeds ----\n"
 				);
 		
 		//Seed Setting
-		ArrayList<Integer> seeds = new ArrayList<Integer>();
+			ArrayList<Integer> seeds = new ArrayList<Integer>();
 		//seeds.add(4519);
 		//seeds.add(33126);
 		/*seeds.add(274042);
@@ -806,20 +808,21 @@ public class Soc2 {
 		//MonteCarlo simulation
 		
 		*/
-		seeds = d.gr(k, influenceTargetID, 1000);
-		System.out.println("\nGreedy algorithm:\n"+"Seed: " + seeds.toString());
+			seeds = d.gr(k, influenceTargetID, 1000);
+			
+			System.out.println("\nGreedy algorithm:\n"+"Seed: " + seeds.toString());
 		
 		//d.showHash();
 		
-		endTime = System.currentTimeMillis();
-		totalTime = endTime - startTime;
-		System.out.println("Execution Time: " + totalTime/1000+" sec");
+			endTime = System.currentTimeMillis();
+			totalTime = endTime - startTime;
+			System.out.println("Execution Time: " + totalTime/1000+" sec");
 		/**/
 		//evaluation
 		
-		d.setSeed(seeds);  //set our seed result 
-		
-		System.out.println( d.MC_times(10000,0));
+			d.setSeed(seeds);  //set our seed result 
+			System.out.println("---Evaluation---\nExpected Times: ");
+			System.out.println( d.MC_times(10000,influenceTargetID));
 		
 		}
 	}
