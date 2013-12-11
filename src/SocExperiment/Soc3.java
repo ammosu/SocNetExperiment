@@ -11,7 +11,10 @@ public class Soc3 {
 	private Hashtable<Integer, Set<Integer>> BFSresult = new Hashtable<Integer, Set<Integer>>(); // all possible influence path 
 	private Hashtable<Integer, Hashtable<Integer, Set<Integer>>> BFSTables = new Hashtable<Integer, Hashtable<Integer, Set<Integer>>>(); 
 	
-	
+	Hashtable<Integer, MonteCarlo> getGraph()
+	{
+		return Graph;
+	}
 	
 	public ArrayList<Integer> getNodeSet()
 	{
@@ -263,11 +266,6 @@ public class Soc3 {
 		
 	}
 		
-	public void clearBfsTable()  
-	{
-		this.BFSresult.clear();
-	}
-	
 	/* read data and build Social Network*/
 	
 	public void putUpdate(Integer key, Integer value) // for all lines put or update hash
@@ -598,13 +596,16 @@ public class Soc3 {
 		{
 			clearActResult();
 			createResult();
-			
-			clearBfsTable();
+			this.BFSresult.clear();
+			this.BFSTables.clear();
 			connectedTable(targetNodeID); //bfs table
 			
 			
 			expectAccTimes += accTimes(targetNodeID);
+			if( i%1000 == 0)
+				System.out.print(".");
 		}
+		
 		return expectAccTimes/time;
 	}
 	
@@ -685,29 +686,38 @@ public class Soc3 {
 		int maxNodeID = -1;
 		while(seeds.size() < top_k)
 		{
+			double startTime, endTime;
+			startTime = System.currentTimeMillis();
 			for(int i = 0; i < this.nodeSet.size(); i++)
 			{
+				if(this.nodeSet.get(i) == targetID || seeds.contains(this.nodeSet.get(i))) //don't care ID = target
+					continue;
 				tempSeed.clear();
 				tempSeed.addAll(seeds);
-				if(this.nodeSet.get(i) != targetID && !seeds.contains(this.nodeSet.get(i))) //except target and seeds
-				{
-					tempSeed.add(this.nodeSet.get(i));
-				}
-				setSeed(tempSeed);
-				double i_value = MC_expectedTimes();
+				//if(!seeds.contains(this.nodeSet.get(i))) //except and seeds
+				
+				tempSeed.add(this.nodeSet.get(i));
+				
+				setSeed(tempSeed); //edit seed
+				double i_value = MC_expectedTimes(); //get value
+				
 				if(i_value > maxValue) // record max value, id
 				{
 					maxValue = i_value;
 					maxNodeID = i;
 				}
-				if(i%100==0)
+				if( i%10000 == 0 )
 					System.out.print(".");
 			}
 			seeds.add(this.nodeSet.get(maxNodeID));
+			if(seeds.size()!=top_k)
+				System.out.println("\nmiddle result: "+maxValue);
 			if(seeds.size()==top_k)
 				System.out.println("\nExpected times:"+maxValue);
 			maxNodeID = -1;
 			maxValue = 0.0;
+			endTime = System.currentTimeMillis();
+			System.out.println("\n"+seeds.size()+"-Seed time: "+(endTime-startTime)/1000 +" sec");
 		}
 		return seeds;
 		
