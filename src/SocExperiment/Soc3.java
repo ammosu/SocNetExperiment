@@ -485,6 +485,33 @@ public class Soc3 {
 		ArrayList<Boolean> resultEdge;
 		for(int i = 0; i < tablesize; i++)
 		{
+			propArr = new ArrayList<Double>();    // original probability
+			propResult = new ArrayList<Double>(); // random number
+			resultEdge = new ArrayList<Boolean>();// propagate success
+			propArr = this.Graph.get(this.nodeSet.get(i)).probability;
+			propResult = createRandomDouble(propArr.size());
+			for(int j = 0; j < propArr.size(); j++)
+			{
+				if(propArr.get(j)>propResult.get(j))
+					resultEdge.add(true);  //smaller than propagation probability
+				else
+					resultEdge.add(false); //bigger
+			}
+			
+			
+			this.Graph.get(this.nodeSet.get(i)).actResult = resultEdge;
+			this.Graph.get(this.nodeSet.get(i)).actResult.trimToSize();
+		}
+	}
+	
+	public void createBinaryResult() // create a random activated result (independent with propagation probability)
+	{
+		int tablesize = this.nodeSet.size();
+		ArrayList<Double> propArr;
+		ArrayList<Double> propResult;
+		ArrayList<Boolean> resultEdge;
+		for(int i = 0; i < tablesize; i++)
+		{
 			propArr = new ArrayList<Double>();
 			propResult = new ArrayList<Double>();
 			resultEdge = new ArrayList<Boolean>();
@@ -492,7 +519,7 @@ public class Soc3 {
 			propResult = createRandomDouble(propArr.size());
 			for(int j = 0; j < propArr.size(); j++)
 			{
-				if(propArr.get(j)>propResult.get(j))
+				if(0.5>propResult.get(j))
 					resultEdge.add(true);  //smaller than propagation probability
 				else
 					resultEdge.add(false); //bigger
@@ -789,6 +816,21 @@ public class Soc3 {
 			this.Graph.get(this.nodeSet.get(i)).MonteCarlo_trim();
 		}
 	}
+	public void showInformation(int TargetID, int k, int MonteCarloTimes)
+	{
+		ArrayList<Double> a = getNeibhPropGraph(TargetID);
+		double max = 0.0;
+		for(int i = 0; i < a.size();i++)
+			max+=a.get(i);
+		System.out.println
+		("Our Target: "+TargetID
+		+"\n\nTarget Neighbors: \n"+getNeibh(TargetID)
+		+"\n\nCorresponding Propagation Probability: \n"+a.toString()
+		+"\n\nMaximum Influence Times: \n" + max
+		+"\n\n ---- Find "+k+"-Seeds ----\n"
+		+"Monte Carlo times: "+ MonteCarloTimes
+		);
+	}
 	
 	
 	public static void main(String[] args) throws IOException
@@ -799,16 +841,16 @@ public class Soc3 {
 		
 		else
 		{
-			int influenceTargetID = 0; //default target
-			int MonteCarloTimes = 200;
+			int influenceTargetID = 59263; //default target
+			int MonteCarloTimes = 10;
 			if(args.length >= 1)
 				influenceTargetID = Integer.parseInt((args[0]));
-			String network = "com-dblp.ungraph - small.txt" , propnetwork = "prop.txt"; //default data
+			String network = "com-dblp.ungraph.txt" , propnetwork = "prop-O.txt"; //default data
 			if(args.length >= 2)
 				network = args[1];
 			if(args.length >= 3)
 				propnetwork = args[2];
-			int k = 1; //default
+			int k = 10; //default
 			if(args.length >= 4)
 				k = Integer.parseInt(args[3]);
 			if(args.length >= 5)
@@ -829,17 +871,11 @@ public class Soc3 {
 			startTime = System.currentTimeMillis();
 			//d.showNodeResult(0);
 		
-			System.out.println
-				("Our Target: "+influenceTargetID
-				+"\n\nTarget Neighbors: \n"+d.getNeibh(influenceTargetID)
-				+"\n\nCorresponding Propagation Probability: \n"+d.getNeibhPropGraph(influenceTargetID)
-				+"\n\n ---- Find "+k+"-Seeds ----\n"
-				+"Monte Carlo times: "+ MonteCarloTimes
-				);
+			d.showInformation(influenceTargetID, k, MonteCarloTimes);
 		
 			//Seed Setting
 			ArrayList<Integer> seeds = new ArrayList<Integer>();
-		
+			
 			//MonteCarlo simulation
 			
 			seeds = d.gr(k, influenceTargetID, MonteCarloTimes);
@@ -854,9 +890,20 @@ public class Soc3 {
 			
 			startTime = System.currentTimeMillis();
 			
+			seeds.clear();
+			seeds.add(101215);
+			seeds.add(120044);
+			seeds.add(33971);
+			seeds.add(33043);
+			seeds.add(411025);
+			//seeds.add(413808);
+			//seeds.add(274042);
+			//seeds.add(1);
+			//seeds.add(403524);
+			/**/
 			d.setSeed(seeds);  //set our seed result 
 			System.out.println("---Evaluation---\nExpected Times: ");
-			System.out.println( d.MC_times(10000,influenceTargetID));
+			System.out.println( d.MC_times(1000,influenceTargetID));
 			
 			endTime = System.currentTimeMillis();
 			totalTime = endTime - startTime;

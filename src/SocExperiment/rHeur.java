@@ -3,7 +3,7 @@ import java.io.IOException;
 import java.util.*;
 
  
-public class HeurSoc {
+public class rHeur {
 	
 	private double MIIAthreshold;
 	private Integer TargetID ;
@@ -11,7 +11,7 @@ public class HeurSoc {
 	//private Hashtable<Integer, Hashtable<Integer, Double>> nbrMIIAProb = new Hashtable<Integer, Hashtable<Integer, Double>>();
 	private Hashtable<Integer, Double> MIIAScore = new Hashtable<Integer, Double>();	
 	private ArrayList<Integer> seed;
-	/*private SortedSet<Map.Entry<Integer, Double>> Score = new TreeSet<Map.Entry<Integer, Double>>(
+	private SortedSet<Map.Entry<Integer, Double>> Score = new TreeSet<Map.Entry<Integer, Double>>(
 			new Comparator<Map.Entry<Integer, Double>>() {
 				@Override
 				public int compare(Map.Entry<Integer, Double> e1, Map.Entry<Integer, Double> e2) 
@@ -27,23 +27,18 @@ public class HeurSoc {
 					return e1.getValue().compareTo(e2.getValue());
 				}
 			});
-	*/
 	
 	
-	public HeurSoc()
+	public rHeur()
 	{
 		//default setting
-		this.MIIAthreshold = 0.7;
+		this.MIIAthreshold = 0.1;
 	}
-	public HeurSoc(int targetID)
+	public rHeur(int targetID)
 	{
 		//default setting
 		this.MIIAthreshold = 0.1;
 		this.TargetID = targetID;
-	}
-	public HeurSoc(double threshold)
-	{
-		this.MIIAthreshold = threshold;
 	}
 	
 	protected void setPreviousNode(Integer key, Integer value)
@@ -146,6 +141,63 @@ public class HeurSoc {
 		}
 	}
 	
+	public SortedSet<Map.Entry<Integer, Double>> fastMIIAalg(int targetID, Hashtable<Integer, MonteCarlo> Graph)
+	{
+		ArrayList<Integer> neighbors = Graph.get(targetID).neighborID;
+		ArrayList<Double> nbr_probability = Graph.get(targetID).probability;
+		SortedMap<Integer, Double> targetHash = new TreeMap<Integer, Double>();
+		
+		SortedSet<Map.Entry<Integer, Double>> Score = new TreeSet<Map.Entry<Integer, Double>>(
+				new Comparator<Map.Entry<Integer, Double>>() {
+					@Override
+					public int compare(Map.Entry<Integer, Double> e1, Map.Entry<Integer, Double> e2) 
+					{
+						return e1.getValue().compareTo(e2.getValue());
+					}
+				});
+		for(int i = 0; i < neighbors.size(); i++)
+		{
+			targetHash.put(neighbors.get(i), nbr_probability.get(i));
+			
+		}
+		Score.addAll(targetHash.entrySet());
+		///////////////////// initial tree set setting
+		
+		//System.out.println("Key: "+Score.first().getKey()+" Value: "+Score.first().getValue());  //Min
+		//System.out.println("Key: "+Score.last().getKey()+" Value: "+Score.last().getValue());   //Max
+		
+		SortedSet<Map.Entry<Integer, Double>> FinialScore = new TreeSet<Map.Entry<Integer, Double>>(
+				new Comparator<Map.Entry<Integer, Double>>() {
+					@Override
+					public int compare(Map.Entry<Integer, Double> e1, Map.Entry<Integer, Double> e2) 
+					{
+						return e1.getValue().compareTo(e2.getValue());
+					}
+				});
+		Map.Entry<Integer, Double> maxEntry = Score.last();
+		FinialScore.add(maxEntry);
+		Score.remove(maxEntry);
+		
+		neighbors = Graph.get(maxEntry.getKey()).neighborID;
+		nbr_probability = Graph.get(maxEntry.getKey()).activeProbability();
+		
+		Map<Integer, Double> map = arr2Hash(maxEntry.getValue(), neighbors, nbr_probability);
+		
+		/*for(Map.Entry<Integer, Double> entries: map.entrySet())
+		{
+			int key = entries.getKey();
+			double value = entries.getValue();
+			if(Score.compare(entries ,Score.first())>0)
+			{
+				
+			}
+		}*/
+		
+		
+		
+		return Score;
+		
+	}
 	public Hashtable<Integer, Double> MIIAalg(int targetID, Hashtable<Integer, MonteCarlo> Graph)  
 	{
 		Hashtable<Integer, Double> miiaScore = new Hashtable<Integer, Double>();
@@ -217,55 +269,31 @@ public class HeurSoc {
 			Fixhash = new Hashtable<Integer, Double>();
 			
 		}
-		//System.out.println("Size: " + miiaScore.size());
-		//getContents(miiaScore);
-		return miiaScore;
-	}
-	public Hashtable<Integer, Double> MIIAalg2(int targetID, Hashtable<Integer, MonteCarlo> Graph)  
-	{
-		Hashtable<Integer, Double> miiaScore = new Hashtable<Integer, Double>();
-		miiaScore.put(targetID, 0.0);
-		//---
-		ArrayList<Integer> neighbors = Graph.get(targetID).neighborID;
-		ArrayList<Double> nbr_probability = Graph.get(targetID).activeProbability();
-		Hashtable<Integer, Double> Hash = arr2Hash(1.0, neighbors, nbr_probability);
-		
-		
-		while(Hash.size()!=0)
-		{
-			Hashtable<Integer, Double> tempHash = new Hashtable<Integer, Double>();
-			miiaScore.put(maxKey(Hash), maxValue(Hash)); //put max every time
-			tempHash = arr2Hash(maxValue(Hash), Graph.get(maxKey(Hash)).neighborID, Graph.get(maxKey(Hash)).activeProbability());
-			for(Map.Entry<Integer, Double> entry : tempHash.entrySet())
-			{
-				if(!miiaScore.containsKey(entry.getKey()) )
-				{
-					if(!Hash.containsKey(entry.getKey())) // put new
-					{
-						//Hash.remove(entry.getKey());
-						Hash.put(entry.getKey(), entry.getValue());
-					}
-					else if(entry.getValue() > Hash.get(entry.getKey()))// update 
-					{
-						Hash.remove(entry.getKey());
-						Hash.put(entry.getKey(), entry.getValue());
-					}
-				}
-			}
-			
-			Hash.remove(maxKey(Hash));
-		}
-		
-		
-			
-
-			
-		
 		System.out.println("Size: " + miiaScore.size());
 		//getContents(miiaScore);
 		return miiaScore;
 	}
+	public void MiiaScoreUpdate(Hashtable<Integer, Double> scoreHash)
+	{
+		for(Map.Entry<Integer,Double> entry : scoreHash.entrySet())
+		{
+			if(this.MIIAScore.containsKey(entry.getKey())) // if key exist than plus 
+			{
+				double score = this.MIIAScore.get(entry.getKey());
+				this.MIIAScore.remove(entry.getKey());
+				this.MIIAScore.put(entry.getKey(), entry.getValue() + score);  //update
+			}
+			else
+				this.MIIAScore.put(entry.getKey(), entry.getValue());
+		}
+	}
 	
+	public int getseed()
+	{
+		int a = maxKey(this.MIIAScore);
+		this.MIIAScore.remove(a);
+		return a;
+	}
 	public Hashtable<Integer, Double> arr2Hash(double multi, ArrayList<Integer> arr, ArrayList<Double> prob)
 	{
 		Hashtable<Integer, Double> hash = new Hashtable<Integer, Double>();
@@ -285,75 +313,17 @@ public class HeurSoc {
 		return hash;
 	}
 	
-	public void MiiaScoreUpdate(Hashtable<Integer, Double> scoreHash)
-	{
-		for(Map.Entry<Integer,Double> entry : scoreHash.entrySet())
-		{
-			if(this.MIIAScore.containsKey(entry.getKey())) // if key exist than plus 
-			{
-				double score = this.MIIAScore.get(entry.getKey());
-				this.MIIAScore.remove(entry.getKey());
-				this.MIIAScore.put(entry.getKey(), entry.getValue() + score);  //update
-			}
-			else
-				this.MIIAScore.put(entry.getKey(), entry.getValue());
-		}
-	}
-	public int MiiaMaxSeed(ArrayList<Integer> seed)
-	{
-		int maxID = -1;
-		Hashtable<Integer, Double> tempHash = new Hashtable<Integer, Double>(this.MIIAScore.size());
-		for(Map.Entry<Integer, Double> entry : this.MIIAScore.entrySet())
-			tempHash.put(entry.getKey(), entry.getValue());
-		while(true)
-		{
-			maxID = maxKey(tempHash);
-			if(seed.contains(maxID))
-				tempHash.remove(maxID);
-			else
-				break;
-		}
-		
-		return maxID;
-		
-	}
-	
-	
-	public int getseed()
-	{
-		int a = maxKey(this.MIIAScore);
-		this.MIIAScore.remove(a);
-		return a;
-	}
-	
 	
 	public static void main(String[] args) throws IOException {
 		
-		HeurSoc t = new HeurSoc();
-		/*
-		Hashtable<Integer, Double> table = new Hashtable<Integer, Double>();
-		Hashtable<Integer, Double> table2 = new Hashtable<Integer, Double>();
-		table.put(1, 0.1);
-		table.put(2, 0.2);
-		table.put(3, 0.3);
-		t.setMIIAScore(table);
+		rHeur t = new rHeur();
 		
-		//table = new Hashtable<Integer, Double>();
-		table2.put(1, 0.3);
-		table2.put(2, 0.05);
-		table2.put(3, 0.1);
-		
-		t.putSmallValue2Hash(table2);
-		
-		t.getContents();
-		
-		*/
 		Soc3 d = new Soc3();
 		
-		int influenceTargetID = 0; //default target
+		int influenceTargetID = 33043; //default target
 		int MonteCarloTimes = 200; //default times
-		int k = 10; //default seed size
-		String network = "com-dblp.ungraph.txt" , propnetwork = "prop-O.txt"; //default data
+		int k = 1; //default seed size
+		String network = "com-dblp.ungraph-small.txt" , propnetwork = "prop.txt"; //default data
 		
 		
 		d.dataRead(network);
@@ -368,20 +338,28 @@ public class HeurSoc {
 		
 		startTime = System.currentTimeMillis();
 		
-		d.showInformation(influenceTargetID, k, MonteCarloTimes);
-			
+	
+		System.out.println
+			("Our Target: "+influenceTargetID
+			+"\n\nTarget Neighbors: \n"+d.getNeibh(influenceTargetID)
+			+"\n\nCorresponding Propagation Probability: \n"+d.getNeibhPropGraph(influenceTargetID)
+			+"\n\n ---- Find "+k+"-Seeds ----\n"
+			+"Monte Carlo times: "+ MonteCarloTimes
+			);
+	
 		//Seed Setting
 		ArrayList<Integer> seeds = new ArrayList<Integer>();
 	
 		//MonteCarlo simulation
 		
 		//seeds = d.gr(k, influenceTargetID, MonteCarloTimes);
+		t.fastMIIAalg(0, d.getGraph());
 		for(int i = 0; i < MonteCarloTimes; i++)
 		{
 			d.clearActResult();
 			d.createResult();
 			//System.out.println("----"+i+" miia score----");
-			t.MiiaScoreUpdate(t.MIIAalg2(0, d.getGraph()));
+			t.MiiaScoreUpdate(t.MIIAalg(0, d.getGraph()));
 		}
 		
 		for(int i = 0; i < k; i++)
@@ -395,10 +373,10 @@ public class HeurSoc {
 
 		//evaluation
 	
-		/*d.setSeed(seeds);  //set our seed result 
+		d.setSeed(seeds);  //set our seed result 
 		System.out.println("---Evaluation---\nExpected Times: ");
-		System.out.println( d.MC_times(200,influenceTargetID));
-		*/
+		System.out.println( d.MC_times(10000,influenceTargetID));
+		
 	}
 
 }
