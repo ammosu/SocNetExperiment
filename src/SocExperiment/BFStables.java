@@ -1,15 +1,16 @@
 package SocExperiment;
 
-import java.io.Serializable;
+//import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Set;
 
-public class BFStables implements Serializable {
+public class BFStables {
 
 	Hashtable<Integer, Hashtable<Integer, Set<Integer>>> Table = new Hashtable<Integer, Hashtable<Integer, Set<Integer>>>();
-	public void addElement()
+	int id;
+	public BFStables(int ID)
 	{
-		
+		this.id = ID; 
 	}
 	
 	public static void main(String[] args) {

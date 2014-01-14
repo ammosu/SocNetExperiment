@@ -21,7 +21,14 @@ public class Heur2Soc {
 	public ArrayList<Integer> splitTimesArr(int times, int k)
 	{
 		ArrayList<Integer> arr = new ArrayList<Integer>();
-		int first = times/((int)Math.pow(2, k-1)-1); 
+		int first = 0;
+		if(k!=1)
+			first = times/((int)Math.pow(2, k-1)-1);
+		else
+		{
+			arr.add(times);
+			return arr;
+		}
 		if(first!=0)
 		{
 			for(int i = 0; i < k; i++)
@@ -37,14 +44,19 @@ public class Heur2Soc {
 			first = 1;
 			for(int i = 0; i < k; i++)
 			{
-				if(first*(int)Math.pow(2, i) <= times/2)
-					if(i != k-1)
+				if(first*(int)Math.pow(2, i) <= times)
 						arr.add(first*(int)Math.pow(2, i));
-					else
-						arr.add(times);
 				else
 				{
-					int num = k - i + 1;
+					int num = k - i;
+					//System.out.println(num);
+					int mul = (times-first*(int)Math.pow(2, i-1)) / num;
+					for(int j = 1; j < num; j++)
+					{
+						arr.add((first*(int)Math.pow(2, i-1))+j*mul);
+					}
+					arr.add(times);
+					break;
 				}
 			}
 		}
@@ -58,7 +70,7 @@ public class Heur2Soc {
 	public static void main(String[] args) throws IOException {
 		
 		Heur2Soc t2 = new Heur2Soc();
-		HeurSoc t = new HeurSoc(0.6);
+		HeurSoc t = new HeurSoc(0.8);
 		//t.miiaTimesSplit(1023, 5);
 		
 		
@@ -66,12 +78,12 @@ public class Heur2Soc {
 		
 		int influenceTargetID = 0; //default target
 		int MonteCarloTimes = 200; //default times
-		int k = 10; //default seed size
-		String network = "com-dblp.ungraph.txt" , propnetwork = "prop-O.txt"; //default data
+		int k = 2; //default seed size
+		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_prop.txt"; //default data
 		
 		ArrayList<Integer> splitArr = t2.splitTimesArr(MonteCarloTimes, k);
 		
-		d.dataRead(network);
+		d.dataRead(network, false);
 		d.setNodeset();
 		d.ReadPropagate(propnetwork);  //set propagation probability
 		d.setInEdgeGraph();  //set in edge weight from propagation graph

@@ -326,7 +326,7 @@ public class rHeur {
 		String network = "com-dblp.ungraph-small.txt" , propnetwork = "prop.txt"; //default data
 		
 		
-		d.dataRead(network);
+		d.dataRead(network, true);
 		d.setNodeset();
 		d.ReadPropagate(propnetwork);  //set propagation probability
 		d.setInEdgeGraph();  //set in edge weight from propagation graph
@@ -375,7 +375,7 @@ public class rHeur {
 	
 		d.setSeed(seeds);  //set our seed result 
 		System.out.println("---Evaluation---\nExpected Times: ");
-		System.out.println( d.MC_times(10000,influenceTargetID));
+		System.out.println( d.MC_acceptanceTimes(10000,influenceTargetID));
 		
 	}
 

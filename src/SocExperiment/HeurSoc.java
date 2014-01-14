@@ -33,7 +33,7 @@ public class HeurSoc {
 	public HeurSoc()
 	{
 		//default setting
-		this.MIIAthreshold = 0.7;
+		this.MIIAthreshold = 0.8;
 	}
 	public HeurSoc(int targetID)
 	{
@@ -353,10 +353,10 @@ public class HeurSoc {
 		int influenceTargetID = 0; //default target
 		int MonteCarloTimes = 200; //default times
 		int k = 10; //default seed size
-		String network = "com-dblp.ungraph.txt" , propnetwork = "prop-O.txt"; //default data
+		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_prop.txt"; //default data
 		
 		
-		d.dataRead(network);
+		d.dataRead(network, false);
 		d.setNodeset();
 		d.ReadPropagate(propnetwork);  //set propagation probability
 		d.setInEdgeGraph();  //set in edge weight from propagation graph
