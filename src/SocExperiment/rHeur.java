@@ -359,7 +359,7 @@ public class rHeur {
 			d.clearActResult();
 			d.createResult();
 			//System.out.println("----"+i+" miia score----");
-			t.MiiaScoreUpdate(t.MIIAalg(0, d.getGraph()));
+			t.MiiaScoreUpdate(t.MIIAalg(influenceTargetID, d.getGraph()));
 		}
 		
 		for(int i = 0; i < k; i++)

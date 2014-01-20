@@ -62,6 +62,10 @@ public class HeurSoc {
 		this.MIIAScore.clear();
 		this.MIIAScore = table;
 	}
+	protected void clearMIIAScore()
+	{
+		this.MIIAScore.clear();
+	}
 	
 	public Integer maxKey(Hashtable<Integer, Double> table)  // find min key from hashtable
 	{
@@ -261,7 +265,7 @@ public class HeurSoc {
 
 			
 		
-		System.out.println("Size: " + miiaScore.size());
+		//System.out.println("Size: " + miiaScore.size());
 		//getContents(miiaScore);
 		return miiaScore;
 	}
@@ -329,7 +333,7 @@ public class HeurSoc {
 	
 	public static void main(String[] args) throws IOException {
 		
-		HeurSoc t = new HeurSoc();
+		HeurSoc t = new HeurSoc(0.8);
 		/*
 		Hashtable<Integer, Double> table = new Hashtable<Integer, Double>();
 		Hashtable<Integer, Double> table2 = new Hashtable<Integer, Double>();
@@ -350,13 +354,16 @@ public class HeurSoc {
 		*/
 		Soc3 d = new Soc3();
 		
-		int influenceTargetID = 0; //default target
+		int influenceTargetID = 33043; //default target
 		int MonteCarloTimes = 200; //default times
-		int k = 10; //default seed size
-		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_prop.txt"; //default data
+		int k = 5; //default seed size
+		String network = "com-dblp.ungraph.txt" , propnetwork = "prop-O.txt"; //default data
 		
 		
-		d.dataRead(network, false);
+		if(network!="Brightkite_edges.txt")
+			d.dataRead(network, true);
+		else
+			d.dataRead(network, false);
 		d.setNodeset();
 		d.ReadPropagate(propnetwork);  //set propagation probability
 		d.setInEdgeGraph();  //set in edge weight from propagation graph
@@ -381,7 +388,7 @@ public class HeurSoc {
 			d.clearActResult();
 			d.createResult();
 			//System.out.println("----"+i+" miia score----");
-			t.MiiaScoreUpdate(t.MIIAalg2(0, d.getGraph()));
+			t.MiiaScoreUpdate(t.MIIAalg2(influenceTargetID, d.getGraph()));
 		}
 		
 		for(int i = 0; i < k; i++)

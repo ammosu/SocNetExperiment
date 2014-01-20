@@ -115,9 +115,9 @@ public class Soc3 {
 	{
 		ArrayList<Integer> a = this.Graph.get(nodeID).activeNbr();
 		Set<Integer> arr = new HashSet<Integer>();
-		for(int i = 0 ; i< a.size(); i++)
+		for(int i : a)
 		{
-			arr.add(a.get(i));
+			arr.add(i);
 		}
 		/*for(int i = 0 ; i< this.Graph.get(nodeID).size(); i++)
 		{
@@ -440,8 +440,8 @@ public class Soc3 {
 		Set<Integer> bfsNodes = new HashSet<Integer>();
 		Set<Integer> now = new HashSet<Integer>();
 		Set<Integer> next = new HashSet<Integer>();
-		bfsNodes.add(nodeID);
-		bfsNodes.add(targetID);
+		bfsNodes.add(nodeID); //neighbor
+		bfsNodes.add(targetID); // target
 		now.add(nodeID);
 		//System.out.println(".");
 		while(now.size() != 0)
@@ -449,15 +449,15 @@ public class Soc3 {
 			
 			//ArrayList<Integer> nextlayer = new ArrayList<Integer>();
 			
-			Iterator<Integer> it = now.iterator();
+			Iterator<Integer> it = now.iterator(); //current layer
 			
 			while(it.hasNext())
 			{
-				next.addAll(activatedNbr(it.next()));
+				next.addAll(activatedNbr(it.next())); // next layer
 			}
-			next.removeAll(bfsNodes);
-			next.remove(targetID);
-			now.clear();
+			next.removeAll(bfsNodes); // remember all node from next layer
+			next.remove(targetID); // don't remember target node
+			now.clear(); 
 			now.addAll(next);
 			bfsNodes.addAll(next);
 			next.clear();
@@ -613,10 +613,6 @@ public class Soc3 {
 	
 	public void acceptanceEvaluation(int targetNode, int MonteCarloTimes, ArrayList<Integer> seed1, ArrayList<Integer> seed2)
 	{
-		//double acceptanceTimes1 = 0.0, acceptanceTimes2 = 0.0;
-		ArrayList<Integer> Nbr = new ArrayList<Integer>();
-		Nbr = this.Graph.get(targetNode).neighborID;
-		ArrayList<Boolean> arr1 = new ArrayList<Boolean>(), arr2 = new ArrayList<Boolean>();
 		double[] acceptanceTimes1 = new double[seed1.size()]; 
 		double[] acceptanceTimes2 = new double[seed2.size()]; 
 		
@@ -625,19 +621,19 @@ public class Soc3 {
 		if(!this.nodeSet.contains(targetNode))
 			System.out.println("No such target ID");
 		double time = (double)MonteCarloTimes;
-		double expectAccTimes = 0.0;
+		
 		for(int i = 0; i < MonteCarloTimes; i++)
 		{
 			clearActResult();
 			createResult();
 			for(int nbr : this.Graph.get(targetNode).activeNbr())
 			{
-				int k = seqEvaluetion(seed1, nbr);
+				int k = seqEvaluetion(seed1, nbr, targetNode);
 				if(k!=-1)
 				{
 					for(int j = k; j < seed1.size() ;j++)
 					{
-						acceptanceTimes1[j]++;
+						acceptanceTimes1[j]+=1.0;
 					}
 				}
 			}
@@ -648,7 +644,7 @@ public class Soc3 {
 		System.out.print("\n");
 		for(int j = 0; j < seed1.size() ;j++)
 		{
-			acceptanceTimes1[j] /= MonteCarloTimes ;
+			acceptanceTimes1[j] /= time ;
 			System.out.print(acceptanceTimes1[j]+", ");
 		}
 		
@@ -689,40 +685,48 @@ public class Soc3 {
 		else
 			return false;*/
 	}
-	public int seqEvaluetion(ArrayList<Integer> seed, int targetNbrID)
+	public int seqEvaluetion(ArrayList<Integer> seed, int targetNbrID, int target )
 	{
-		int i = -1;
+		
 		Set<Integer> tracedNode = new HashSet<Integer>();
+		Set<Integer> nowArr = new HashSet<Integer>();
+		Set<Integer> nextNodeArr = new HashSet<Integer>();
+				
+		nowArr.add(targetNbrID);  // target(neighbors)
+		tracedNode.add(targetNbrID);  // remember targetNbr
+		tracedNode.add(target);       // remember target
 		
-		Set<Integer> lastNodeArr = new HashSet<Integer>();
-		Set<Integer> currentNodeArr = new HashSet<Integer>();
-		lastNodeArr.add(targetNbrID);  // target(neighbors)
-		tracedNode.add(targetNbrID);  // remember target
+		int firstInfluenceNode = seed.size();
 		
-		while(true)
+		while(nowArr.size()!=0)
 		{
-			tracedNode.addAll(currentNodeArr); // remember all traced nodes
-			
-			
-			Iterator<Integer> iter = lastNodeArr.iterator(); //element of lastnodearr
+			Iterator<Integer> iter = nowArr.iterator(); //next BFS level array
 			while(iter.hasNext())
 			{
-				currentNodeArr.addAll(activatedNbr(iter.next()));
+				nextNodeArr.addAll(activatedNbr(iter.next()));
 			}
 			
-			currentNodeArr.removeAll(tracedNode);
-			for(i = 0; i < seed.size(); i++)
-				if(currentNodeArr.contains(seed.get(i))) // which i that seed(i) is connected to nbr
+			nextNodeArr.removeAll(tracedNode);
+			nextNodeArr.remove(target);  // don't consider the influence to the target 
+			
+			for(int j = 0; j < firstInfluenceNode; j++)
+				if(nextNodeArr.contains(seed.get(j))) // which i that seed(i) is connected to nbr
 				{
-					return i;
+					firstInfluenceNode = j;
 				}
-			if(currentNodeArr.size()==0) // no next BFS level 
+			
+			if(firstInfluenceNode==0)  // if target influenced by the first seed
 				break;
-			lastNodeArr.clear();
-			lastNodeArr.addAll(currentNodeArr);
+			nowArr.clear();
+			nowArr.addAll(nextNodeArr);
+			tracedNode.addAll(nextNodeArr);
+			nextNodeArr.clear();
 			
 		}
-		return i;
+		if(firstInfluenceNode!=seed.size())
+			return firstInfluenceNode;
+		else
+			return -1;
 	}
 	
 	

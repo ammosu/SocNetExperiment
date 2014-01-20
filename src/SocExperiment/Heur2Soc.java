@@ -10,25 +10,32 @@ import java.util.TreeSet;
 
 public class Heur2Soc {
 	
-	private SortedSet<Map.Entry<Integer, Double>> NewScore = new TreeSet<Map.Entry<Integer, Double>>(
+	/*private SortedSet<Map.Entry<Integer, Double>> NewScore = new TreeSet<Map.Entry<Integer, Double>>(
 			new Comparator<Map.Entry<Integer, Double>>() {
 				@Override
 				public int compare(Map.Entry<Integer, Double> e1, Map.Entry<Integer, Double> e2) 
 				{
 					return e1.getValue().compareTo(e2.getValue());
 				}
-			});
+			});*/
 	public ArrayList<Integer> splitTimesArr(int times, int k)
 	{
 		ArrayList<Integer> arr = new ArrayList<Integer>();
 		int first = 0;
-		if(k!=1)
+		if(k!=1&&k!=2)
 			first = times/((int)Math.pow(2, k-1)-1);
-		else
+		else if(k!=2)
 		{
 			arr.add(times);
 			return arr;
 		}
+		else
+		{
+			arr.add(100);
+			arr.add(200);
+			return arr;
+		}
+		
 		if(first!=0)
 		{
 			for(int i = 0; i < k; i++)
@@ -70,20 +77,35 @@ public class Heur2Soc {
 	public static void main(String[] args) throws IOException {
 		
 		Heur2Soc t2 = new Heur2Soc();
-		HeurSoc t = new HeurSoc(0.8);
+		HeurSoc t = new HeurSoc(0.7);
 		//t.miiaTimesSplit(1023, 5);
 		
 		
 		Soc3 d = new Soc3();
 		
-		int influenceTargetID = 0; //default target
+		int influenceTargetID = 33043; //default target
 		int MonteCarloTimes = 200; //default times
-		int k = 2; //default seed size
+		int k = 10; //default seed size
 		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_prop.txt"; //default data
 		
-		ArrayList<Integer> splitArr = t2.splitTimesArr(MonteCarloTimes, k);
+		if(args.length >= 1)
+			influenceTargetID = Integer.parseInt((args[0]));
+		if(args.length >= 2)
+			network = args[1];
+		if(args.length >= 3)
+			propnetwork = args[2];
+		if(args.length >= 4)
+			k = Integer.parseInt(args[3]);
+		if(args.length >= 5)
+			MonteCarloTimes = Integer.parseInt(args[4]);
 		
-		d.dataRead(network, false);
+		
+		
+		
+		if(network!="Brightkite_edges.txt")
+			d.dataRead(network, true);
+		else
+			d.dataRead(network, false);
 		d.setNodeset();
 		d.ReadPropagate(propnetwork);  //set propagation probability
 		d.setInEdgeGraph();  //set in edge weight from propagation graph
@@ -95,7 +117,10 @@ public class Heur2Soc {
 		
 		startTime = System.currentTimeMillis();
 		
-		d.showInformation(influenceTargetID, k, MonteCarloTimes);
+		for(int index = 1; index <= k; index++)
+		{
+		ArrayList<Integer> splitArr = t2.splitTimesArr(MonteCarloTimes, index);
+		//d.showInformation(influenceTargetID, k, MonteCarloTimes);
 		
 		
 		//Seed Setting
@@ -110,7 +135,7 @@ public class Heur2Soc {
 		{
 			d.clearActResult();
 			d.createBinaryResult();
-			t.MiiaScoreUpdate(t.MIIAalg2(0, d.getGraph()));
+			t.MiiaScoreUpdate(t.MIIAalg2(influenceTargetID, d.getGraph()));
 			if(i == splitArr.get(splitIndex))
 			{
 				splitIndex++;
@@ -127,7 +152,9 @@ public class Heur2Soc {
 		endTime = System.currentTimeMillis();
 		totalTime = endTime - startTime;
 		System.out.println("Execution Time: " + totalTime/1000+" sec");
-
+		
+		t.clearMIIAScore();
+		}
 		//evaluation
 	
 		/*
