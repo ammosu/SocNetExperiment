@@ -11,9 +11,9 @@ public class Evaluation{
 	public static void main(String[] args) throws IOException {
 		int influenceTargetID = 0; //default target
 		int MonteCarloTimes = 10000;
-		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_prop.txt"; //default data
+		String network = "com-dblp.ungraph - small.txt" , propnetwork = "prop.txt"; //default data
 		int k = 10; //default
-		String[] seedStr = "13924, 30888, 33963, 13939, 13909, 10599, 13931, 8675, 33533, 13928".split(", ");
+		String[] seedStr = "2, 411025, 369692, 23073, 4519, 120044, 274042, 413808, 33971, 101215".split(", ");
 		
 		if(args.length >= 1)
 			influenceTargetID = Integer.parseInt((args[0]));
@@ -35,16 +35,23 @@ public class Evaluation{
 		// Initial Setting
 		Soc3 d = new Soc3();
 		if(network!="Brightkite_edges.txt")
+		{
 			d.dataRead(network, true);
+			System.out.println(network+" Data True");
+		}
 		else
+		{
 			d.dataRead(network, false);
+			System.out.println("Brightkite Data False");
+		}
 		d.setNodeset();
 		d.ReadPropagate(propnetwork);  //set propagation probability
-		d.setInEdgeGraph();  //set in edge weight from propagation graph
+		//d.setInEdgeGraph();  //set in edge weight from propagation graph
 		d.trim();
 		d.info();
 		/* Main Function */
 	
+		d.showInformation(influenceTargetID, k, MonteCarloTimes);
 		startTime = System.currentTimeMillis();
 		
 	
