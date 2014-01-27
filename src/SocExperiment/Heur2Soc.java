@@ -83,9 +83,9 @@ public class Heur2Soc {
 		
 		Soc3 d = new Soc3();
 		
-		int influenceTargetID = 33043; //default target
+		int influenceTargetID = 0; //default target
 		int MonteCarloTimes = 200; //default times
-		int k = 10; //default seed size
+		int k = 9; //default seed size
 		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_prop.txt"; //default data
 		
 		if(args.length >= 1)

@@ -91,15 +91,15 @@ public class Soc3 {
 	{
 		FileWriter fw;
 		try {
-			fw = new FileWriter(propfile + "uniform");
+			fw = new FileWriter(propfile);
 			BufferedWriter bw = new BufferedWriter(fw);
-			for(int i = 0; i < this.Graph.size();i++)
+			for(int i = 0; i < this.nodeSet.size();i++)
 			{
 				bw.write(this.nodeSet.get(i)+" ");
 				for(int j = 0; j < this.Graph.get(this.nodeSet.get(i)).probability.size()-1;j++)
-					bw.write(this.Graph.get(this.nodeSet.get(i)).probability.get(j)+",");
-				bw.write(this.Graph.get(this.nodeSet.get(i)).probability.get(this.Graph.get(this.nodeSet.get(i)).probability.size()-1).toString());
-				bw.newLine();
+					bw.write(1.0/(double)this.Graph.get(this.nodeSet.get(i)).size()+",");
+				bw.write(1.0/(double)this.Graph.get(this.nodeSet.get(i)).size()+"\n");
+				//bw.newLine();
 			}
 			bw.close();
 			fw.close();
@@ -109,7 +109,30 @@ public class Soc3 {
 		
 		
 	}
-	
+	public void WritePropagateTriValue(String propfile) // write propagate graph to file
+	{
+		double[] tri = {0.1, 0.01, 0.001};
+		Random ran = new Random();
+		FileWriter fw;
+		try {
+			fw = new FileWriter(propfile);
+			BufferedWriter bw = new BufferedWriter(fw);
+			for(int i = 0; i < this.nodeSet.size();i++)
+			{
+				bw.write(this.nodeSet.get(i)+" ");
+				for(int j = 0; j < this.Graph.get(this.nodeSet.get(i)).probability.size()-1;j++)
+					bw.write(tri[ran.nextInt(3)]+",");
+				bw.write(tri[ran.nextInt(3)]+"\n");
+				//bw.newLine();
+			}
+			bw.close();
+			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		
+	}
 	
 	public Set<Integer> activatedNbr(int nodeID) //activated neighbor
 	{
@@ -467,7 +490,7 @@ public class Soc3 {
 		//System.out.println("ID:"+nodeID+" BFS Fin!");
 		if(bfsNodes.size()!=0)
 			this.BFSresult.put(nodeID, bfsNodes);
-		System.out.println("No. "+ nodeID + " Size: " + bfsNodes.size());
+		//System.out.println("No. "+ nodeID + " Size: " + bfsNodes.size());
 	}
 	
 	/*public void showNodeResult(int nodeID)
@@ -627,12 +650,21 @@ public class Soc3 {
 			//System.out.println("Neighbors group "+i+": "+this.Graph.get(targetNode).activeNbr().toString());//check
 			for(int nbr : this.Graph.get(targetNode).activeNbr())
 			{
-				int k = seqEvaluetion(seed1, nbr, targetNode);
+				String[] kStr = seqEvaluetion(seed1, seed2, nbr, targetNode).split(","); 
+				int k = Integer.parseInt(kStr[0]);
+				int k2 = Integer.parseInt(kStr[1]);
 				if(k!=-1)
 				{
 					for(int j = k; j < seed1.size() ;j++)
 					{
 						acceptanceTimes1[j]+=1.0;
+					}
+				}
+				if(k2!=-1)
+				{
+					for(int j = k2; j < seed2.size() ;j++)
+					{
+						acceptanceTimes2[j]+=1.0;
 					}
 				}
 			}
@@ -644,44 +676,90 @@ public class Soc3 {
 		for(int j = 0; j < seed1.size() ;j++)
 		{
 			acceptanceTimes1[j] /= time ;
-			System.out.print(acceptanceTimes1[j]+", ");
+			if(j!=seed2.size()-1)
+				System.out.print(acceptanceTimes1[j]+", ");
+			else
+				System.out.print("\n");
 		}
-		
-		
-		/*Set<Integer> bfsNodes = new HashSet<Integer>();
-		Set<Integer> now = new HashSet<Integer>();
-		Set<Integer> next = new HashSet<Integer>();
-		bfsNodes.add(nodeID); //neighbor
-		bfsNodes.add(targetID); // target
-		now.add(nodeID);
-		
-		while(now.size() != 0)
+		System.out.print("\n");
+		for(int j = 0; j < seed2.size() ;j++)
 		{
-			
-			//ArrayList<Integer> nextlayer = new ArrayList<Integer>();
-			
-			Iterator<Integer> it = now.iterator(); //current layer
-			
-			while(it.hasNext())
-			{
-				next.addAll(activatedNbr(it.next())); // next layer
-			}
-			next.removeAll(bfsNodes); // remember all node from next layer
-			next.remove(targetID); // don't remember target node
-			now.clear(); 
-			now.addAll(next);
-			bfsNodes.addAll(next);
-			next.clear();
+			acceptanceTimes2[j] /= time ;
+			if(j!=seed2.size()-1)
+				System.out.print(acceptanceTimes2[j]+", ");
+			else
+				System.out.print("\n");
 		}
-		bfsNodes.remove(targetID);
-		//System.out.println("No. "+ nodeID + "\n" + bfsNodes.toString());
-		//System.out.println("ID:"+nodeID+" BFS Fin!");
-		if(bfsNodes.size()!=0)
-			this.BFSresult.put(nodeID, bfsNodes);
-		System.out.println("No. "+ nodeID + " Size: " + bfsNodes.size());
-		*/
+		
+		
+		
 	}
-	public int seqEvaluetion(ArrayList<Integer> seed, int targetNbrID, int target )
+	
+	public void acceptanceTest(int targetNode, int MonteCarloTimes, ArrayList<Integer> seed1, ArrayList<Integer> seed2)
+	{
+		double[] acceptanceTimes1 = new double[seed1.size()]; 
+		double[] acceptanceTimes2 = new double[seed2.size()]; 
+		this.seedSet = seed1;
+		
+		if(MonteCarloTimes <= 0)
+			System.out.println("Number Setting Wrong");
+		if(!this.nodeSet.contains(targetNode))
+			System.out.println("No such target ID");
+		double time = (double)MonteCarloTimes;
+		
+		for(int i = 0; i < MonteCarloTimes; i++)
+		{
+			clearActResult();
+			createResult();
+			
+			//System.out.println("Neighbors group "+i+": "+this.Graph.get(targetNode).activeNbr().toString());//check
+			for(int nbr : this.Graph.get(targetNode).activeNbr())
+			{
+				String[] kStr = seqEvaluetion(seed1, seed2, nbr, targetNode).split(","); 
+				int k = Integer.parseInt(kStr[0]);
+				int k2 = Integer.parseInt(kStr[1]);
+				if(k!=-1)
+				{
+					for(int j = k; j < seed1.size() ;j++)
+					{
+						acceptanceTimes1[j]+=1.0;
+					}
+				}
+				if(k2!=-1)
+				{
+					for(int j = k2; j < seed2.size() ;j++)
+					{
+						acceptanceTimes2[j]+=1.0;
+					}
+				}
+			}
+			if(i%100 ==0 )
+				System.out.print(".");
+			
+		}
+		System.out.print("\n");
+		for(int j = 0; j < seed1.size() ;j++)
+		{
+			acceptanceTimes1[j] /= time ;
+			if(j!=seed1.size()-1)
+				System.out.print(acceptanceTimes1[j]+", ");
+			else
+				System.out.print(acceptanceTimes1[j]+"\n");
+		}
+		System.out.print("\n");
+		for(int j = 0; j < seed2.size() ;j++)
+		{
+			acceptanceTimes2[j] /= time ;
+			if(j!=seed2.size()-1)
+				System.out.print(acceptanceTimes2[j]+", ");
+			else
+				System.out.print(acceptanceTimes2[j]+"\n");
+		}
+		
+		
+		
+	}
+	public String seqEvaluetion(ArrayList<Integer> seed, ArrayList<Integer> seed2, int targetNbrID, int target )
 	{
 		
 		Set<Integer> tracedNode = new HashSet<Integer>();
@@ -693,6 +771,7 @@ public class Soc3 {
 		tracedNode.add(target);       // remember target
 		
 		int firstInfluenceNode = seed.size();
+		int firstInfluenceNode2 = seed2.size();
 		
 		while(nowArr.size()!=0)
 		{
@@ -703,8 +782,6 @@ public class Soc3 {
 			}
 			
 			nextNodeArr.removeAll(tracedNode);
-			//nextNodeArr.remove(target);  // don't consider the influence to the target 
-			
 			
 			nowArr.clear();
 			nowArr.addAll(nextNodeArr);
@@ -717,16 +794,23 @@ public class Soc3 {
 					firstInfluenceNode = j;
 				}
 			}
-			if(firstInfluenceNode==0)  // if target influenced by the first seed
+			for(int j2 = 0; j2 < firstInfluenceNode2; j2++)
+			{
+				if(tracedNode.contains(seed2.get(j2))) // which i that seed2(i) is connected to nbr
+				{
+					firstInfluenceNode2 = j2;
+				}
+			}
+			if(firstInfluenceNode==0 && firstInfluenceNode2==0)  // if target influenced by the first seed
 				break;
 			
 			nextNodeArr.clear();
 		}
 		
 		if(firstInfluenceNode!=seed.size())
-			return firstInfluenceNode;
+			return firstInfluenceNode+","+firstInfluenceNode2;
 		else
-			return -1;
+			return "-1,-1";
 	}
 	
 	
@@ -971,7 +1055,7 @@ public class Soc3 {
 	
 	public static void main(String[] args) throws IOException
 	{
-		/*
+		
 		if(args.length > 5 )
 			System.out.println("Too many args, your args' length : "+args.length+"\nPlease enter: 1.TargetID 2.Network_data 3.Propagate_data 4.Seed size 5.Monte Carlo Times" +
 					"\ne.g. 0 com-dblp.ungraph.txt prop-O.txt 1 200");
@@ -1028,8 +1112,8 @@ public class Soc3 {
 			
 			//evaluation
 			
-			/*startTime = System.currentTimeMillis();
-			
+			startTime = System.currentTimeMillis();
+			/*
 			seeds.clear();
 			seeds.add(101215);
 			seeds.add(120044);
@@ -1048,9 +1132,9 @@ public class Soc3 {
 			endTime = System.currentTimeMillis();
 			totalTime = endTime - startTime;
 			System.out.println("\nEvaluation Spend: " + totalTime/1000+" sec");
-			
-		}*/
-		
+			*/
+		}
+		/*
 		String[] seedStr = "2, 411025".split(", ");
 		ArrayList<Integer> seeds = new ArrayList<Integer>();
 		for(String Str : seedStr)
@@ -1065,6 +1149,6 @@ public class Soc3 {
 		s.setSeed(seeds);
 		s.createBFSTables(200, 0);
 		
-		System.out.println("Expected Influence Times: "+s.MC_expectedTimes());
+		System.out.println("Expected Influence Times: "+s.MC_expectedTimes());*/
 	}
 }

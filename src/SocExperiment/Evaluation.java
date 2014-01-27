@@ -11,9 +11,10 @@ public class Evaluation{
 	public static void main(String[] args) throws IOException {
 		int influenceTargetID = 0; //default target
 		int MonteCarloTimes = 10000;
-		String network = "com-dblp.ungraph - small.txt" , propnetwork = "prop.txt"; //default data
+		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_WC.txt"; //default data
 		int k = 10; //default
-		String[] seedStr = "2, 411025, 369692, 23073, 4519, 120044, 274042, 413808, 33971, 101215".split(", ");
+		String[] seedStr = "30, 49, 36, 47".split(", ");
+		String[] seedStr2 = "31, 47, 36, 30, 40, 49".split(", ");
 		
 		if(args.length >= 1)
 			influenceTargetID = Integer.parseInt((args[0]));
@@ -27,7 +28,10 @@ public class Evaluation{
 			MonteCarloTimes = Integer.parseInt(args[4]);
 		if(args.length >= 6)
 			seedStr = args[5].split(",");
-		
+		if(args.length >= 7)
+			seedStr2 = args[6].split(",");
+		/*else
+			seedStr2 = new String[0];*/
 		
 		
 		double startTime, endTime, totalTime;
@@ -60,14 +64,20 @@ public class Evaluation{
 		
 		//seedStr = "0, 126556, 154258, 118667, 215179".split(", ");   //input seed string
 		ArrayList<Integer> seeds = new ArrayList<Integer>();
-		seeds.clear();
+		ArrayList<Integer> seeds2 = new ArrayList<Integer>();
 		for(int i = 0; i< seedStr.length; i++)
 		{
 			seeds.add(Integer.parseInt(seedStr[i]));
 		}
+		for(int i = 0; i< seedStr2.length; i++)
+		{
+			seeds2.add(Integer.parseInt(seedStr2[i]));
+		}
+		
 		System.out.println("Seeds: "+seeds.toString());
-		d.setSeed(seeds);
-		d.acceptanceEvaluation(influenceTargetID, MonteCarloTimes, seeds, seeds);
+		System.out.println("Seeds2: "+seeds2.toString());
+		//d.setSeed(seeds);
+		d.acceptanceEvaluation(influenceTargetID, MonteCarloTimes, seeds, seeds2);
 		
 		
 		endTime = System.currentTimeMillis();
