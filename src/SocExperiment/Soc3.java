@@ -1080,7 +1080,7 @@ public class Soc3 {
 			double startTime, endTime, totalTime;
 		
 			boolean isDuplica = true;
-			if(network == "Brightkite_edges.txt")
+			if(network.equals("Brightkite_edges.txt"))
 				isDuplica = false;
 			// Initial Setting
 			Soc3 d = new Soc3();

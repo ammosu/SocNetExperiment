@@ -360,7 +360,7 @@ public class HeurSoc {
 		String network = "com-dblp.ungraph.txt" , propnetwork = "prop-O.txt"; //default data
 		
 		
-		if(network!="Brightkite_edges.txt")
+		if(!network.equals("Brightkite_edges.txt"))
 			d.dataRead(network, true);
 		else
 			d.dataRead(network, false);
