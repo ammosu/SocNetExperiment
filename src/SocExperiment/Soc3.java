@@ -111,7 +111,7 @@ public class Soc3 {
 	}
 	public void WritePropagateTriValue(String propfile) // write propagate graph to file
 	{
-		double[] tri = {0.1, 0.01, 0.001};
+		double[] tri = {0.5, 0.3, 0.1};
 		Random ran = new Random();
 		FileWriter fw;
 		try {
@@ -676,10 +676,10 @@ public class Soc3 {
 		for(int j = 0; j < seed1.size() ;j++)
 		{
 			acceptanceTimes1[j] /= time ;
-			if(j!=seed2.size()-1)
+			if(j!=seed1.size()-1)
 				System.out.print(acceptanceTimes1[j]+", ");
 			else
-				System.out.print("\n");
+				System.out.print(acceptanceTimes1[j]+"\n");
 		}
 		System.out.print("\n");
 		for(int j = 0; j < seed2.size() ;j++)
@@ -688,7 +688,7 @@ public class Soc3 {
 			if(j!=seed2.size()-1)
 				System.out.print(acceptanceTimes2[j]+", ");
 			else
-				System.out.print("\n");
+				System.out.print(acceptanceTimes2[j]+"\n");
 		}
 		
 		

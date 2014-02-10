@@ -17,6 +17,16 @@ public class InfMultiTarget {
 		this.seedSet = seeds;
 	}
 	
+	public Hashtable<Integer, MonteCarlo> getGraph()
+	{
+		return this.Graph;
+	}
+	
+	public ArrayList<Integer> getNodes()
+	{
+		return this.nodeSet;
+	}
+	
 	public void ReadPropagate(String propfile) throws IOException  // read propagate file and write to propagate graph
 	{
 		FileReader fr;
@@ -346,8 +356,6 @@ public class InfMultiTarget {
 			}
 			//expectAccTimes += nConnectNbr(this.BFSTables.get(j));
 		}
-			
-		
 		
 		return expectAccTimes/(double)this.MultiTargetTables.size();
 	}
@@ -378,7 +386,7 @@ public class InfMultiTarget {
 				tempSeed.add(this.nodeSet.get(i));
 				
 				setSeed(tempSeed); //edit seed
-				double i_value = MC_expectedTimes(); //get value
+				double i_value = MC_expectedTimes()*targets.size(); //get value
 				
 				if(i_value > maxValue) // record max value, id
 				{
@@ -450,6 +458,123 @@ public class InfMultiTarget {
 		
 		return randomTargets;
 	}
+	public String seqEvaluetion(ArrayList<Integer> seed, ArrayList<Integer> seed2, int targetNbrID, int target )
+	{
+		
+		Set<Integer> tracedNode = new HashSet<Integer>();
+		Set<Integer> nowArr = new HashSet<Integer>();
+		Set<Integer> nextNodeArr = new HashSet<Integer>();
+				
+		nowArr.add(targetNbrID);  // target(neighbors)
+		tracedNode.add(targetNbrID);  // remember targetNbr
+		tracedNode.add(target);       // remember target
+		
+		int firstInfluenceNode = seed.size();
+		int firstInfluenceNode2 = seed2.size();
+		
+		while(nowArr.size()!=0)
+		{
+			Iterator<Integer> iter = nowArr.iterator(); //next BFS level array
+			while(iter.hasNext())
+			{
+				nextNodeArr.addAll(this.Graph.get(iter.next()).activeNbr());
+			}
+			
+			nextNodeArr.removeAll(tracedNode);
+			
+			nowArr.clear();
+			nowArr.addAll(nextNodeArr);
+			tracedNode.addAll(nextNodeArr);
+			
+			for(int j = 0; j < firstInfluenceNode; j++)
+			{
+				if(tracedNode.contains(seed.get(j))) // which i that seed(i) is connected to nbr
+				{
+					firstInfluenceNode = j;
+				}
+			}
+			for(int j2 = 0; j2 < firstInfluenceNode2; j2++)
+			{
+				if(tracedNode.contains(seed2.get(j2))) // which i that seed2(i) is connected to nbr
+				{
+					firstInfluenceNode2 = j2;
+				}
+			}
+			if(firstInfluenceNode==0 && firstInfluenceNode2==0)  // if target influenced by the first seed
+				break;
+			
+			nextNodeArr.clear();
+		}
+		
+		if(firstInfluenceNode!=seed.size())
+			return firstInfluenceNode+","+firstInfluenceNode2;
+		else
+			return "-1,-1";
+	}
+	public void acceptanceEvaluation(ArrayList<Integer> targets, int MonteCarloTimes, ArrayList<Integer> seed1, ArrayList<Integer> seed2)
+	{
+		double[] acceptanceTimes1 = new double[seed1.size()]; 
+		double[] acceptanceTimes2 = new double[seed2.size()]; 
+		
+		if(MonteCarloTimes <= 0)
+			System.out.println("Number Setting Wrong");
+		if(!this.nodeSet.containsAll(targets))
+			System.out.println("No such target ID");
+		double time = (double)MonteCarloTimes;
+		
+		for(int i = 0; i < MonteCarloTimes; i++)
+		{
+			clearActResult();
+			createResult();
+			
+			//System.out.println("Neighbors group "+i+": "+this.Graph.get(targetNode).activeNbr().toString());//check
+			for(int m = 0; m < targets.size();m++)
+			for(int nbr : this.Graph.get(targets.get(m)).activeNbr())
+			{
+				String[] kStr = seqEvaluetion(seed1, seed2, nbr, targets.get(m)).split(","); 
+				int k = Integer.parseInt(kStr[0]);
+				int k2 = Integer.parseInt(kStr[1]);
+				if(k!=-1)
+				{
+					for(int j = k; j < seed1.size() ;j++)
+					{
+						acceptanceTimes1[j]+=1.0;
+					}
+				}
+				if(k2!=-1)
+				{
+					for(int j = k2; j < seed2.size() ;j++)
+					{
+						acceptanceTimes2[j]+=1.0;
+					}
+				}
+			}
+			if(i%100 ==0 )
+				System.out.print(".");
+			
+		}
+		System.out.print("\n");
+		for(int j = 0; j < seed1.size() ;j++)
+		{
+			acceptanceTimes1[j] /= time ;
+			if(j!=seed1.size()-1)
+				System.out.print(acceptanceTimes1[j]+", ");
+			else
+				System.out.print(acceptanceTimes1[j]+"\n");
+		}
+		System.out.print("\n");
+		for(int j = 0; j < seed2.size() ;j++)
+		{
+			acceptanceTimes2[j] /= time ;
+			if(j!=seed2.size()-1)
+				System.out.print(acceptanceTimes2[j]+", ");
+			else
+				System.out.print(acceptanceTimes2[j]+"\n");
+		}
+		
+		
+		
+	}
 	/**
 	 *    1            2               3              4             5     
 	 * TargetIDs  network Path Propagation Path  Seed size k MonteCarlo Times
@@ -472,7 +597,7 @@ public class InfMultiTarget {
 				Targets.add(Integer.parseInt(a));
 		}
 		
-		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_TV.txt"; //default data
+		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_TV2.txt"; //default data
 		
 		if(args.length >= 2)
 			network = args[1];

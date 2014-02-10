@@ -18,7 +18,7 @@ public class RandomIMT {
 		if(args.length >= 1)
 			targetSize = Integer.parseInt(args[0]);
 		
-		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_TV.txt"; //default data
+		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_TV2.txt"; //default data
 		
 		if(args.length >= 2)
 			network = args[1];
