@@ -2,107 +2,81 @@ package SocExperiment;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.Map;
 
-public class HeurMultiTarget {
+public class HeurMultiTarget2 {
 	private double threshold = 0.1;
+	//private ArrayList<Integer> candidate = new ArrayList<Integer>();
+	//private Hashtable<Integer, ArrayList<Double>> MiiaScore = new Hashtable<Integer, ArrayList<Double>>();
 	private ArrayList<Integer> candidate = new ArrayList<Integer>();
-	private Hashtable<Integer, Double[]> MiiaArrScore = new Hashtable<Integer, Double[]>();
-	
 	private Hashtable<Integer, Double> MIIAScore = new Hashtable<Integer, Double>();
 	private ArrayList<Integer> targets = new ArrayList<Integer>();
-	private double[] remainTargetScore; 
-	private Hashtable<Integer, Double> Tscore = new Hashtable<Integer, Double>();
+	
+	private Hashtable<Integer, Double[]> MIIAArrScore = new Hashtable<Integer, Double[]>(); // node score
+	private double[] remainTargetScore; // maximum remain score
+	private ArrayList<Integer> elements = new ArrayList<Integer>(); // 
 	
 	
-	public void mainProcess(ArrayList<Integer> target,int k, String network, String propnetwork, int MonteCarloTimes) throws IOException
+	
+	public void mainProcess(ArrayList<Integer> targets, int k, String network, String propnetwork, int MonteCarloTimes) throws IOException
 	{
-		InfMultiTarget iMt = new InfMultiTarget();
-		
 		boolean isDuplica = true;
 		if(network.equals("Brightkite_edges.txt"))
 			isDuplica = false;
 		
+		InfMultiTarget iMt = new InfMultiTarget();
 		iMt.dataRead(network, isDuplica);  // read network structure
 		iMt.setNodeset();       // all nodes
 		iMt.ReadPropagate(propnetwork);  //set propagation probability
 		iMt.info();
 		
-		this.targets = target;
-		this.remainTargetScore = new double[this.targets.size()];
-		for(int i = 0; i < this.targets.size(); i++)
-		{
-			double sum = 0.0;
-			for(double p : iMt.getGraph().get(targets.get(i)).probability)
-			{
-				sum += p;
-			}
-			this.remainTargetScore[i] = sum;
-		}
-		MiiaScore(iMt, MonteCarloTimes);
-		setTscore(MonteCarloTimes);
-		
-		//System.out.println(this.Tscore.toString());
-		
-		
-		for(int i = 0; i < k; i++)
-		{
-			int key = new HeurSoc().maxKey(this.Tscore);
-			System.out.print(key+" ");
-			for(int j = 0; j < this.MiiaArrScore.get(key).length-1; j++)
-				System.out.print(this.MiiaArrScore.get(key)[j]+",");
-			System.out.println(this.MiiaArrScore.get(key)[this.MiiaArrScore.get(key).length-1]);
-			subRTScore(this.MiiaArrScore.get(key));
-			this.MiiaArrScore.remove(key);
-			
-			
-			setTscore(MonteCarloTimes);
-		}
-		
-		
-	}
-	
-	
-	public void subRTScore(Double[] doubles)
-	{
-		for(int i = 0; i < this.remainTargetScore.length; i++)
-		{
-			if(this.remainTargetScore[i] - doubles[i]>0)
-				this.remainTargetScore[i] -= doubles[i];
-			else
-				this.remainTargetScore[i] = 0.0;
-		}
-	}
-	
-	public void setTscore(int MCtimes)
-	{
-		this.Tscore.clear();
-		for(Map.Entry<Integer, Double[]> e : this.MiiaArrScore.entrySet())
-		{
-			double sum = 0.0;
-			for(int i = 0; i< e.getValue().length; i++)
-			{
-				
-				sum += this.remainTargetScore[i]*e.getValue()[i]/(double)MCtimes;
-			}
-			this.Tscore.put(e.getKey(), sum);
-		}
-	}
-	public void setThreshold(double th)
-	{
-		this.threshold = th;
-	}
-	public void setTargets(ArrayList<Integer> targets)
-	{
 		this.targets = targets;
+		initRTV(iMt); // initialize remain target score
+		
+		
+		MiiaScore(iMt, MonteCarloTimes, k);
 	}
-	public void MiiaScore(InfMultiTarget imt, int monteCarloTimes)  
+	public void initRTV(InfMultiTarget im)
+	{
+		if(this.targets.size() == 0)
+			System.out.println("Targets not initialize");
+		double[] a = new double[this.targets.size()];
+		
+		for(int i = 0; i < this.targets.size(); i++)
+			for(int j = 0; j < im.getGraph().get(targets.get(i)).probability.size(); j++)
+				a[i] += im.getGraph().get(targets.get(i)).probability.get(j);
+		
+		this.remainTargetScore = a;
+	}
+	public void setRTV(double[] a)
+	{
+		this.remainTargetScore = a;
+	}
+	public void subRTV(Double[] a, int mcScale)
+	{
+		for(int i = 0; i < a.length; i++)
+			this.remainTargetScore[i] -= a[i]/(double)mcScale;
+	}
+	public void MiiaScore(InfMultiTarget imt, int monteCarloTimes, int k)  
 	{
 		//ArrayList<Integer> allnodes = imt.getNodes(); // all nodes
 		
-		for(int i = 0; i < monteCarloTimes; i++)
+		ArrayList<Integer> stopArr = new Heur2Soc().splitTimesArr(monteCarloTimes, k);
+		int stopIndex = 0;
+		
+		for(int i = 1; i <= monteCarloTimes; i++)
 		{
+			if(i == stopArr.get(stopIndex))
+			{
+				int key = sortTopElement();
+				//System.out.println("!"+i);
+				stopIndex++;
+				subRTV(this.MIIAArrScore.get(key), i); 
+			}
+			
 			imt.clearActResult();
 			imt.createResult();
 			for(int j = 0; j < this.targets.size();j++)
@@ -111,11 +85,11 @@ public class HeurMultiTarget {
 				{
 					if(!this.candidate.contains(e.getKey())) //<- if no such key
 						this.candidate.add(e.getKey());
-					if(this.MiiaArrScore.keySet().contains(e.getKey())) //<- already scoring
+					if(this.MIIAArrScore.keySet().contains(e.getKey())) //<- already scoring
 					{
-						Double[] replaceArr = this.MiiaArrScore.get(e.getKey());
+						Double[] replaceArr = this.MIIAArrScore.get(e.getKey());
 						replaceArr[j] += e.getValue();
-						this.MiiaArrScore.put(e.getKey(), replaceArr);
+						this.MIIAArrScore.put(e.getKey(), replaceArr);
 					}
 					else //<- not exist in hash
 					{
@@ -123,30 +97,100 @@ public class HeurMultiTarget {
 						for(int a = 0; a<replaceArr.length;a++)
 							replaceArr[a] = 0.0;
 						replaceArr[j] += e.getValue();
-						this.MiiaArrScore.put(e.getKey(), replaceArr);
+						this.MIIAArrScore.put(e.getKey(), replaceArr);
 					}
 				}
 				
 			}
 		}
 	}
-	public void MiiaScoreArr(InfMultiTarget imt, int monteCarloTimes)
+	
+	public int sortTopElement()
 	{
-		
-		imt.createResult();
+		final double[] values = this.remainTargetScore;
+		int topKey = -1;
+		ArrayList<Map.Entry<Integer, Double[]>> sortlist = new ArrayList<Map.Entry<Integer, Double[]>>(this.MIIAArrScore.entrySet());
+		Collections.sort(sortlist, new Comparator<Map.Entry<Integer, Double[]>>()
+	    		{
+	    			public int compare(Map.Entry<Integer, Double[]> o1, Map.Entry<Integer, Double[]> o2) 
+	    			{
+	    				Double sum1 = 0.0, sum2 = 0.0;
+	    				for(int i = 0; i < o1.getValue().length; i++)
+	    					sum1+= o1.getValue()[i]*values[i];
+	    				for(int i = 0; i < o2.getValue().length; i++)
+	    					sum2+= o2.getValue()[i]*values[i];
+	    				return sum1.compareTo(sum2);
+	    			}
+	    		});
+		for(int i = sortlist.size()-1; i > 0; i--)
+		{
+			if(!this.elements.contains(sortlist.get(i).getKey()))
+			{
+				System.out.print(sortlist.get(i).getKey() + ",");
+				topKey = sortlist.get(i).getKey();
+				i = 0;
+				this.elements.add(topKey);
+			}
+		}
+		return topKey;
+	}
+	
+	public void setThreshold(double th)
+	{
+		this.threshold = th;
+	}
+	public void setTargets(ArrayList<Integer> targets)
+	{
+		this.targets = targets;
+	}
+	public void cleatMIIAScore()
+	{
+		this.MIIAScore.clear();
+	}
+	
+	public void MiiaScoreArr(InfMultiTarget imt, int monteCarloTimes, int k)
+	{
+		ArrayList<Integer> StopArray = new Heur2Soc().splitTimesArr(monteCarloTimes, k);
+		int stopIndex = 0;
+		ArrayList<Integer> seed = new ArrayList<Integer>();
+		//ArrayList<Integer> allnodes = imt.getNodes(); // all nodes
+		imt.createBinaryResult();
 		// for each monteCarlo process
 		for(int i = 0; i < monteCarloTimes; i++)
 		{//for each target
+			if(i == StopArray.get(stopIndex))
+			{
+				stopIndex++;
+				seed.add(MiiaMaxSeed(seed));
+			}
+			
 			for(int target : this.targets)
 			{
 				//Hashtable<Integer, Double> tScoreTable = new Hashtable<Integer, Double>();
 				//ArrayList<Integer> tScore = new ArrayList<Integer>();
-				MiiaScoreUpdate(MIIAalg(target, imt.getGraph()), (double)imt.getGraph().get(target).size());
+				MiiaScoreUpdate(MIIAalg(target, imt.getGraph()));
 				
 			}
 		}
 	}
-	
+	public int MiiaMaxSeed(ArrayList<Integer> seed)
+	{
+		int maxID = -1;
+		Hashtable<Integer, Double> tempHash = new Hashtable<Integer, Double>(this.MIIAScore.size());
+		for(Map.Entry<Integer, Double> entry : this.MIIAScore.entrySet())
+			tempHash.put(entry.getKey(), entry.getValue());
+		while(true)
+		{
+			maxID = new HeurSoc().maxKey(tempHash);
+			if(seed.contains(maxID))
+				tempHash.remove(maxID);
+			else
+				break;
+		}
+		
+		return maxID;
+		
+	}
 	
 	public Hashtable<Integer, Double> MIIAalg(int targetID, Hashtable<Integer, MonteCarlo> Graph)  
 	{
@@ -185,7 +229,7 @@ public class HeurMultiTarget {
 		return miiaScore;
 	}
 	
-	public void MiiaScoreUpdate(Hashtable<Integer, Double> scoreHash, double scale)
+	public void MiiaScoreUpdate(Hashtable<Integer, Double> scoreHash)
 	{
 		for(Map.Entry<Integer,Double> entry : scoreHash.entrySet())
 		{
@@ -193,10 +237,10 @@ public class HeurMultiTarget {
 			{
 				double score = this.MIIAScore.get(entry.getKey());
 				this.MIIAScore.remove(entry.getKey());
-				this.MIIAScore.put(entry.getKey(), entry.getValue()*scale + score);  //update
+				this.MIIAScore.put(entry.getKey(), entry.getValue() + score);  //update
 			}
 			else
-				this.MIIAScore.put(entry.getKey(), entry.getValue()*scale);
+				this.MIIAScore.put(entry.getKey(), entry.getValue());
 		}
 	}
 	
@@ -234,15 +278,13 @@ public class HeurMultiTarget {
 	}
 	
 	
-	
-	
 	/**
 	 * @param args
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		System.out.println("Heuristic 1 for multi-target");
-		HeurMultiTarget hMt = new HeurMultiTarget();
+		System.out.println("Heuristic 2 for multi-target");
+		HeurMultiTarget2 hMt = new HeurMultiTarget2();
 		
 		hMt.setThreshold(0.1);
 		
@@ -266,34 +308,36 @@ public class HeurMultiTarget {
 			network = args[1];
 		if(args.length >= 3)
 			propnetwork = args[2];
-		int k = 5; //default
+		int k = 3; //default
 		if(args.length >= 4)
 			k = Integer.parseInt(args[3]);
 		if(args.length >= 5)
 			MonteCarloTimes = Integer.parseInt(args[4]);
 	
-		double startTime, endTime, totalTime;
-		
-		/*boolean isDuplica = true;
-		if(network.equals("Brightkite_edges.txt"))
-			isDuplica = false;*/
+		//ArrayList<Integer> StopArray = new Heur2Soc().splitTimesArr(MonteCarloTimes, k);
 		
 		System.out.println("Targets: "+Targets.toString());
-		
-		/*InfMultiTarget iMt = new InfMultiTarget();
-		iMt.dataRead(network, isDuplica);  // read network structure
-		iMt.setNodeset();       // all nodes
-		iMt.ReadPropagate(propnetwork);  //set propagation probability
-		iMt.info();*/
+		double startTime, endTime, totalTime;
 		
 		startTime = System.currentTimeMillis();
 		
-		/*hMt.MiiaScoreArr(iMt, MonteCarloTimes);
-		System.out.println(hMt.getTopKMiiaScore(k).toString());
-		*/
 		hMt.mainProcess(Targets, k, network, propnetwork, MonteCarloTimes);
+		/*boolean isDuplica = true;
+		if(network.equals("Brightkite_edges.txt"))
+			isDuplica = false;
 		
+		InfMultiTarget iMt = new InfMultiTarget();
+		iMt.dataRead(network, isDuplica);  // read network structure
+		iMt.setNodeset();       // all nodes
+		iMt.ReadPropagate(propnetwork);  //set propagation probability
+		iMt.info();
 		
+		for(int i = 1; i<=k; i++)
+		{
+			hMt.MiiaScoreArr(iMt, MonteCarloTimes, i);
+			System.out.println(hMt.getTopKMiiaScore(i).toString());
+			hMt.cleatMIIAScore();
+		}*/
 		endTime = System.currentTimeMillis();
 		
 		totalTime = endTime - startTime;
@@ -302,3 +346,4 @@ public class HeurMultiTarget {
 	}
 
 }
+

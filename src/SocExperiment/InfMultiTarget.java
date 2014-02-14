@@ -166,7 +166,7 @@ public class InfMultiTarget {
 	}
 	
 	
-	public void bfsProcess(int nodeID, int targetID) // neighbor
+	public void bfsProcess(int nodeID, int targetID, int maxSteps) // neighbor
 	{
 		Set<Integer> bfsNodes = new HashSet<Integer>();
 		Set<Integer> now = new HashSet<Integer>();
@@ -175,8 +175,11 @@ public class InfMultiTarget {
 		bfsNodes.add(targetID); // target
 		now.add(nodeID);
 		//System.out.println(".");
-		while(now.size() != 0)
+		int stepcount = 1;
+		
+		while(now.size() != 0 && stepcount < maxSteps)
 		{
+			stepcount++ ;
 			Iterator<Integer> it = now.iterator(); //current layer
 			
 			while(it.hasNext())
@@ -274,7 +277,33 @@ public class InfMultiTarget {
 			this.Graph.get(this.nodeSet.get(i)).actResult.trimToSize();
 		}
 	}
-	public void connectedTable(int targetID) //target nbr bfs process
+	public void createBinaryResult() // create a random activated result (independent with propagation probability)
+	{
+		int tablesize = this.nodeSet.size();
+		ArrayList<Double> propArr;
+		ArrayList<Double> propResult;
+		ArrayList<Boolean> resultEdge;
+		for(int i = 0; i < tablesize; i++)
+		{
+			propArr = new ArrayList<Double>();
+			propResult = new ArrayList<Double>();
+			resultEdge = new ArrayList<Boolean>();
+			propArr = this.Graph.get(this.nodeSet.get(i)).probability;
+			propResult = createRandomDouble(propArr.size());
+			for(int j = 0; j < propArr.size(); j++)
+			{
+				if(0.5>propResult.get(j))
+					resultEdge.add(true);  //smaller than propagation probability
+				else
+					resultEdge.add(false); //bigger
+			}
+			
+			
+			this.Graph.get(this.nodeSet.get(i)).actResult = resultEdge;
+			this.Graph.get(this.nodeSet.get(i)).actResult.trimToSize();
+		}
+	}
+	public void connectedTable(int targetID, int maxSteps) //target nbr bfs process
 	{
 		ArrayList<Integer> nbrs = new ArrayList<Integer>();
 		Set<Integer> actNbr = new HashSet<Integer>();
@@ -284,10 +313,10 @@ public class InfMultiTarget {
 			nbrs.add(iter.next());  // neighbor add to nbrs(not duplicate)
 		
 		for(int i = 0; i< nbrs.size(); i++)
-			bfsProcess(nbrs.get(i), targetID);
+			bfsProcess(nbrs.get(i), targetID, maxSteps);
 	}
 	
-	public void createBFSTables(int times, ArrayList<Integer> targets) // Pre-Compute connected nodes for all Monte Carlo result
+	public void createBFSTables(int times, ArrayList<Integer> targets, int maxSteps) // Pre-Compute connected nodes for all Monte Carlo result
 	{
 		double startTime, endTime, totalTime, startTime2 = 0.0, endTime2 = 0.0;
 		startTime = System.currentTimeMillis();
@@ -302,7 +331,7 @@ public class InfMultiTarget {
 			
 			for(int target : targets)
 			{
-				connectedTable(target);  // for all targets create connected tables
+				connectedTable(target, maxSteps);  // for all targets create connected tables
 				this.MultiTargetTables.put(Integer.toString(target)+"-"+Integer.toString(i), this.SingleTargetTables); //target-i => list of nbr->bfs
 				this.SingleTargetTables = new ArrayList<Hashtable<Integer, Set<Integer>>>();
 			}
@@ -357,16 +386,16 @@ public class InfMultiTarget {
 			//expectAccTimes += nConnectNbr(this.BFSTables.get(j));
 		}
 		
-		return expectAccTimes/(double)this.MultiTargetTables.size();
+		return expectAccTimes;
 	}
 	
-	public ArrayList<Integer> greedy(int top_k, ArrayList<Integer> targets, int times) // greedy algorithm (remember all BFS results)
+	public ArrayList<Integer> greedy(int top_k, ArrayList<Integer> targets, int times, int maxSteps) // greedy algorithm (remember all BFS results)
 	{
 		ArrayList<Integer> seeds = new ArrayList<Integer>(); // found seed
 		ArrayList<Integer> tempSeed = new ArrayList<Integer>();  // add a candidate to seeds 
 		
 		
-		createBFSTables(times, targets);
+		createBFSTables(times, targets, maxSteps);
 		//showHash();
 		
 		double maxValue = 0.0;
@@ -386,7 +415,7 @@ public class InfMultiTarget {
 				tempSeed.add(this.nodeSet.get(i));
 				
 				setSeed(tempSeed); //edit seed
-				double i_value = MC_expectedTimes()*targets.size(); //get value
+				double i_value = MC_expectedTimes()/(double)times; //get value
 				
 				if(i_value > maxValue) // record max value, id
 				{
@@ -458,7 +487,7 @@ public class InfMultiTarget {
 		
 		return randomTargets;
 	}
-	public String seqEvaluetion(ArrayList<Integer> seed, ArrayList<Integer> seed2, int targetNbrID, int target )
+	public String seqEvaluetion(ArrayList<Integer> seed, ArrayList<Integer> seed2, int targetNbrID, int target, int maxSteps)
 	{
 		
 		Set<Integer> tracedNode = new HashSet<Integer>();
@@ -471,9 +500,26 @@ public class InfMultiTarget {
 		
 		int firstInfluenceNode = seed.size();
 		int firstInfluenceNode2 = seed2.size();
+		int stepIndex = 1;
 		
-		while(nowArr.size()!=0)
+		for(int j = 0; j < firstInfluenceNode; j++)
 		{
+			if(tracedNode.contains(seed.get(j))) // which i that seed(i) is connected to nbr
+			{
+				firstInfluenceNode = j;
+			}
+		}
+		for(int j2 = 0; j2 < firstInfluenceNode2; j2++)
+		{
+			if(tracedNode.contains(seed2.get(j2))) // which i that seed(i) is connected to nbr
+			{
+				firstInfluenceNode2 = j2;
+			}
+		}
+		
+		while(nowArr.size()!=0 && stepIndex < maxSteps)
+		{
+			stepIndex++;
 			Iterator<Integer> iter = nowArr.iterator(); //next BFS level array
 			while(iter.hasNext())
 			{
@@ -506,12 +552,14 @@ public class InfMultiTarget {
 			nextNodeArr.clear();
 		}
 		
-		if(firstInfluenceNode!=seed.size())
-			return firstInfluenceNode+","+firstInfluenceNode2;
-		else
-			return "-1,-1";
+		if(firstInfluenceNode==seed.size())
+			firstInfluenceNode = -1;
+		if(firstInfluenceNode2==seed2.size())
+			firstInfluenceNode2 = -1;
+		return firstInfluenceNode+","+firstInfluenceNode2;
+		
 	}
-	public void acceptanceEvaluation(ArrayList<Integer> targets, int MonteCarloTimes, ArrayList<Integer> seed1, ArrayList<Integer> seed2)
+	public void acceptanceEvaluation(ArrayList<Integer> targets, int MonteCarloTimes, ArrayList<Integer> seed1, ArrayList<Integer> seed2, int steps)
 	{
 		double[] acceptanceTimes1 = new double[seed1.size()]; 
 		double[] acceptanceTimes2 = new double[seed2.size()]; 
@@ -531,7 +579,7 @@ public class InfMultiTarget {
 			for(int m = 0; m < targets.size();m++)
 			for(int nbr : this.Graph.get(targets.get(m)).activeNbr())
 			{
-				String[] kStr = seqEvaluetion(seed1, seed2, nbr, targets.get(m)).split(","); 
+				String[] kStr = seqEvaluetion(seed1, seed2, nbr, targets.get(m), steps).split(","); 
 				int k = Integer.parseInt(kStr[0]);
 				int k2 = Integer.parseInt(kStr[1]);
 				if(k!=-1)
@@ -571,8 +619,113 @@ public class InfMultiTarget {
 			else
 				System.out.print(acceptanceTimes2[j]+"\n");
 		}
+
+	}
+	public int seqEvaluetion(ArrayList<Integer> seed, int targetNbrID, int target, int maxSteps)
+	{
+		
+		Set<Integer> tracedNode = new HashSet<Integer>();
+		Set<Integer> nowArr = new HashSet<Integer>();
+		Set<Integer> nextNodeArr = new HashSet<Integer>();
+				
+		nowArr.add(targetNbrID);  // target(neighbors)
+		tracedNode.add(targetNbrID);  // remember targetNbr
+		tracedNode.add(target);       // remember target
+		
+		int firstInfluenceNode = seed.size();
+		int stepIndex = 1;
+		
+		for(int j = 0; j < firstInfluenceNode; j++)
+		{
+			if(tracedNode.contains(seed.get(j))) // which i that seed(i) is connected to nbr
+			{
+				firstInfluenceNode = j;
+			}
+		}
 		
 		
+		while(nowArr.size()!=0 && stepIndex < maxSteps)
+		{
+			stepIndex++;
+			for(int j = 0; j < firstInfluenceNode; j++)
+			{
+				if(tracedNode.contains(seed.get(j))) // which i that seed(i) is connected to nbr
+				{
+					firstInfluenceNode = j;
+				}
+			}
+			Iterator<Integer> iter = nowArr.iterator(); //next BFS level array
+			while(iter.hasNext())
+			{
+				nextNodeArr.addAll(this.Graph.get(iter.next()).activeNbr());
+			}
+			
+			nextNodeArr.removeAll(tracedNode);
+			
+			nowArr.clear();
+			nowArr.addAll(nextNodeArr);
+			tracedNode.addAll(nextNodeArr);
+			
+			for(int j = 0; j < firstInfluenceNode; j++)
+			{
+				if(tracedNode.contains(seed.get(j))) // which i that seed(i) is connected to nbr
+				{
+					firstInfluenceNode = j;
+				}
+			}
+			if(firstInfluenceNode==0)  // if target influenced by the first seed
+				break;
+			
+			nextNodeArr.clear();
+		}
+		
+		if(firstInfluenceNode!=seed.size())
+			return firstInfluenceNode;
+		else
+			return -1;
+	}
+	public void acceptanceEvaluation(ArrayList<Integer> targets, int MonteCarloTimes, ArrayList<Integer> seed, int steps)
+	{
+		double[] acceptanceTimes = new double[seed.size()];
+		if(MonteCarloTimes <= 0)
+			System.out.println("Number Setting Wrong");
+		if(!this.nodeSet.containsAll(targets))
+			System.out.println("No such target ID");
+		
+		for(int i = 0; i < MonteCarloTimes; i++)
+		{
+			clearActResult();
+			createResult();
+			
+			//System.out.println("Neighbors group "+i+": "+this.Graph.get(targetNode).activeNbr().toString());//check
+			for(int m = 0; m < targets.size();m++)
+				for(int nbr : this.Graph.get(targets.get(m)).activeNbr())
+				{
+				
+					int k = seqEvaluetion(seed, nbr, targets.get(m), steps);
+				
+					if(k!=-1) //intersection not empty
+					{
+						for(int j = k; j < seed.size() ;j++)
+						{
+							acceptanceTimes[j]+=1.0;
+						}
+					}
+				}
+			if(i%100 ==0 )
+				System.out.print(".");
+			
+		}
+		System.out.print("\n");
+		for(int j = 0; j < seed.size() ;j++)
+		{
+			acceptanceTimes[j] /= (double)MonteCarloTimes ;
+			if(j!=seed.size()-1)
+				System.out.print(acceptanceTimes[j]+", ");
+			else
+				System.out.print(acceptanceTimes[j]+"\n");
+		}
+		System.out.print("\n");
 		
 	}
 	/**
@@ -581,8 +734,9 @@ public class InfMultiTarget {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		String TargetStr = "29332, 39708, 51466"; //default target
+		String TargetStr = "27210, 25704, 22883, 32792, 21773, 38395, 20859, 44903, 48409, 20506"; //default target
 		int MonteCarloTimes = 200;
+		int maxSteps = 1;
 		ArrayList<Integer> Targets = new ArrayList<Integer>();
 		String[] str = TargetStr.split(", ");
 		for(int i = 0; i <str.length; i++)
@@ -608,7 +762,9 @@ public class InfMultiTarget {
 			k = Integer.parseInt(args[3]);
 		if(args.length >= 5)
 			MonteCarloTimes = Integer.parseInt(args[4]);
-	
+		if(args.length >= 6)
+			maxSteps = Integer.parseInt(args[5]);
+		
 		double startTime, endTime, totalTime;
 		
 		boolean isDuplica = true;
@@ -635,11 +791,13 @@ public class InfMultiTarget {
 		
 		iMt.showInformation(Targets);  // show targets information
 		
+		System.out.println("\nTargets: "+Targets.toString()+"\nMax step: "+maxSteps);
+		
 		startTime = System.currentTimeMillis();
 		
 		ArrayList<Integer> seeds = new ArrayList<Integer>();
 		
-		seeds = iMt.greedy(k, Targets, MonteCarloTimes);
+		seeds = iMt.greedy(k, Targets, MonteCarloTimes, maxSteps);
 		System.out.println("\nGreedy algorithm:\n"+"Seed: " + seeds.toString());
 		
 		endTime = System.currentTimeMillis();

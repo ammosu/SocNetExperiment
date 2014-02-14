@@ -27,12 +27,14 @@ public class Heur2Soc {
 		else if(k!=2)
 		{
 			arr.add(times);
+			System.out.println(arr.toString());
 			return arr;
 		}
 		else
 		{
 			arr.add(100);
 			arr.add(200);
+			System.out.println(arr.toString());
 			return arr;
 		}
 		

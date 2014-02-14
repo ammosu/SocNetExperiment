@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class RandomIMT {
-
+	
 	/**
 	 * @param args
 	 * @throws IOException 
@@ -12,6 +12,8 @@ public class RandomIMT {
 	public static void main(String[] args) throws IOException {
 		
 		int MonteCarloTimes = 200;
+		int maxSteps = 10;
+		
 		ArrayList<Integer> Targets = new ArrayList<Integer>();
 		int targetSize = 5; // default target size
 		
@@ -56,7 +58,7 @@ public class RandomIMT {
 		iMt.ReadPropagate(propnetwork);  //set propagation probability
 		iMt.info();
 		
-		Targets = iMt.RandomTargets(5, targetSize); // target at least 5 nbrs
+		Targets = iMt.RandomTargets(0, targetSize); // target at least 5 nbrs
 		
 		iMt.showInformation(Targets);  // show targets information
 		
@@ -64,7 +66,7 @@ public class RandomIMT {
 		
 		ArrayList<Integer> seeds = new ArrayList<Integer>();
 		
-		seeds = iMt.greedy(k, Targets, MonteCarloTimes);
+		seeds = iMt.greedy(k, Targets, MonteCarloTimes, maxSteps);
 		System.out.println("\nGreedy algorithm:\n"+"Seed: " + seeds.toString());
 		
 		endTime = System.currentTimeMillis();
