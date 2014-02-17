@@ -6,19 +6,22 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Set;
 
 	public class HeurMultiTarget3 {
 		private double threshold = 0.1;
 		//private ArrayList<Integer> candidate = new ArrayList<Integer>();
 		//private Hashtable<Integer, ArrayList<Double>> MiiaScore = new Hashtable<Integer, ArrayList<Double>>();
-		private ArrayList<Integer> candidate = new ArrayList<Integer>();
-		private Hashtable<Integer, Double> MIIAScore = new Hashtable<Integer, Double>();
+		
+		//private Hashtable<Integer, Double> MIIAScore = new Hashtable<Integer, Double>();
+		//private ArrayList<Integer> candidate = new ArrayList<Integer>();
 		private ArrayList<Integer> targets = new ArrayList<Integer>();
 		
-		private Hashtable<Integer, Double[]> MIIAArrScore = new Hashtable<Integer, Double[]>(); // node score
-		private double[] remainTargetScore; // maximum remain score
+		private Hashtable<Integer, Double[]> MIIAArrScore = new Hashtable<Integer, Double[]>(); // node -> score array
+		private double[] targetScore; // maximum remain score
 		private ArrayList<Integer> elements = new ArrayList<Integer>(); // 
-		private Integer[] currentTotalNbrScore;
+		private Double[] expectUsedRatios; // used ratio
+		private Double[] currentTotalNbrScore; // total score for monte carlo times i
 		
 		
 		public void mainProcess(ArrayList<Integer> targets, int k, String network, String propnetwork, int MonteCarloTimes) throws IOException
@@ -36,7 +39,7 @@ import java.util.Map;
 			/*Main function*/
 			
 			this.targets = targets;
-			initRTV(iMt); // initialize remain target score
+			initRTV(iMt); // initialize values that dependent on target
 			
 			
 			MiiaScore(iMt, MonteCarloTimes, k);
@@ -46,14 +49,22 @@ import java.util.Map;
 			if(this.targets.size() == 0)
 				System.out.println("Targets not initialize");
 			double[] a = new double[this.targets.size()];
+			this.currentTotalNbrScore = new Double[this.targets.size()]; 
+			this.expectUsedRatios = new Double[this.targets.size()];
 			
+			for(int i = 0; i < this.targets.size(); i++)
+				a[i] = 0.0;
 			for(int i = 0; i < this.targets.size(); i++)
 				for(int j = 0; j < im.getGraph().get(targets.get(i)).probability.size(); j++)
 					a[i] += im.getGraph().get(targets.get(i)).probability.get(j);
+			for(int i = 0; i < this.targets.size(); i++)
+				this.currentTotalNbrScore[i] = 0.0;
+			for(int i = 0; i < this.targets.size(); i++)
+				this.expectUsedRatios[i] = 0.0;
 			
-			this.remainTargetScore = a;
+			this.targetScore = a;
 		}
-		public void setRTV(double[] a)
+		/*public void setRTV(double[] a)
 		{
 			this.remainTargetScore = a;
 		}
@@ -62,36 +73,41 @@ import java.util.Map;
 			for(int i = 0; i < a.length; i++)
 				this.remainTargetScore[i] -= a[i]/(double)mcScale;
 		}
+		public void subRTV(Double[] a, double mcScale)
+		{
+			for(int i = 0; i < a.length; i++)
+				this.remainTargetScore[i] -= a[i]/(double)mcScale;
+		}*/
 		public void MiiaScore(InfMultiTarget imt, int monteCarloTimes, int k)  
 		{
 			//ArrayList<Integer> allnodes = imt.getNodes(); // all nodes
+			ArrayList<Integer> stopArr = new ArrayList<Integer>();
+			//stopArr = new Heur2Soc().splitTimesArr(monteCarloTimes, k);
 			
-			ArrayList<Integer> stopArr = new Heur2Soc().splitTimesArr(monteCarloTimes, k);
+			stopArr.add(5);
+			stopArr.add(10);
+			stopArr.add(20);
+			stopArr.add(50);
+			stopArr.add(200);
+			
 			int stopIndex = 0;
 			
 			for(int i = 1; i <= monteCarloTimes; i++)
 			{
-				if(i == stopArr.get(stopIndex))
-				{
-					int key = sortTopElement();
-					//System.out.println("!"+i);
-					stopIndex++;
-					subRTV(this.MIIAArrScore.get(key), i); 
-				}
-				
 				imt.clearActResult();
-				imt.createResult();
-				for(int j = 0; j < this.targets.size();j++)
+				imt.createBinaryResult();
+				
+				for(int j = 0; j < this.targets.size();j++) // for all target calculate influence score
 				{
-					for(Map.Entry<Integer, Double> e : MIIAalg(this.targets.get(j), imt.getGraph()).entrySet())
+					Hashtable<Integer, Double> mipHash = MIIAalg(this.targets.get(j), imt.getGraph(), j);
+					for(Map.Entry<Integer, Double> e : mipHash.entrySet())
 					{
-						if(!this.candidate.contains(e.getKey())) //<- if no such key
-							this.candidate.add(e.getKey());
 						if(this.MIIAArrScore.keySet().contains(e.getKey())) //<- already scoring
 						{
 							Double[] replaceArr = this.MIIAArrScore.get(e.getKey());
 							replaceArr[j] += e.getValue();
 							this.MIIAArrScore.put(e.getKey(), replaceArr);
+							
 						}
 						else //<- not exist in hash
 						{
@@ -104,10 +120,18 @@ import java.util.Map;
 					}
 					
 				}
+				
+				
+				if(stopIndex < stopArr.size() && i == stopArr.get(stopIndex))
+				{
+					System.out.print(findTopElement()+",");
+					
+					stopIndex++;
+				}
 			}
 		}
 		
-		public int sortTopElement()
+		/*public int sortTopElement()
 		{
 			final double[] values = this.remainTargetScore;
 			int topKey = -1;
@@ -135,6 +159,51 @@ import java.util.Map;
 				}
 			}
 			return topKey;
+		}*/
+		public int findTopElement()
+		{
+			int topKey = -1;
+			double topValue = Double.MIN_VALUE;
+			for(int key : this.MIIAArrScore.keySet()) // for all key already scoring calculate the degree of importance of target 
+			{
+				if(!this.elements.contains(key)) // not top before
+				{
+					Double sum = 0.0;
+					Double[] arr = this.MIIAArrScore.get(key);
+					for(int i = 0; i < arr.length; i++)
+						sum+=arr[i]*this.targetScore[i]*(1.0-this.expectUsedRatios[i]);
+					if(sum>=topValue)
+					{
+						topKey = key;
+						topValue = sum;
+					}
+				}
+			}
+			
+			this.elements.add(topKey);
+			
+			Double[] maxArr = this.MIIAArrScore.get(topKey);
+			
+			/*System.out.println("Max value: "+topValue);
+			
+			System.out.println("\n  MaxArr = ");
+			for(int j = 0; j < maxArr.length;j++)
+				System.out.print(" "+maxArr[j]+", ");
+			*/
+			for(int i = 0; i < maxArr.length; i++)
+			{
+				double scale = maxArr[i]/this.currentTotalNbrScore[i];
+				if(this.expectUsedRatios[i] + scale >= 1.0)
+					this.expectUsedRatios[i] = 1.0;
+				else
+					this.expectUsedRatios[i] += scale;
+			}
+			/*System.out.println("\n  Use Ratio = ");
+			for(int j = 0; j < this.expectUsedRatios.length;j++)
+				System.out.print(" "+this.expectUsedRatios[j]+", ");
+			*/
+			
+			return topKey;
 		}
 		
 		public void setThreshold(double th)
@@ -145,7 +214,7 @@ import java.util.Map;
 		{
 			this.targets = targets;
 		}
-		public void cleatMIIAScore()
+		/*public void cleatMIIAScore()
 		{
 			this.MIIAScore.clear();
 		}
@@ -168,9 +237,9 @@ import java.util.Map;
 			
 			return maxID;
 			
-		}
+		}*/
 		
-		public Hashtable<Integer, Double> MIIAalg(int targetID, Hashtable<Integer, MonteCarlo> Graph)  
+		public Hashtable<Integer, Double> MIIAalg(int targetID, Hashtable<Integer, MonteCarlo> Graph, int idIndex)  
 		{
 			HeurSoc hS = new HeurSoc(this.threshold);
 			Hashtable<Integer, Double> miiaScore = new Hashtable<Integer, Double>();
@@ -178,36 +247,62 @@ import java.util.Map;
 			//---
 			ArrayList<Integer> neighbors = Graph.get(targetID).neighborID;
 			ArrayList<Double> nbr_probability = Graph.get(targetID).activeProbability();
-			Hashtable<Integer, Double> Hash = hS.arr2Hash(1.0, neighbors, nbr_probability);
+			Hashtable<Integer, Double> nbrHash = hS.arr2Hash(1.0, neighbors, nbr_probability);  // activate neighbors -> probability
+			Hashtable<Integer, Double> Hash = new Hashtable<Integer, Double>();
 			
+			Hashtable<Integer, Double> nbrScore = new Hashtable<Integer,Double>();
 			
-			while(Hash.size()!=0)
+			this.currentTotalNbrScore[idIndex] += (double)nbrHash.size();
+			
+			for(Map.Entry<Integer, Double> e : nbrHash.entrySet())
 			{
-				Hashtable<Integer, Double> tempHash = new Hashtable<Integer, Double>();
-				miiaScore.put(hS.maxKey(Hash), hS.maxValue(Hash)); //put max every time
-				tempHash = hS.arr2Hash(hS.maxValue(Hash), Graph.get(hS.maxKey(Hash)).neighborID, Graph.get(hS.maxKey(Hash)).activeProbability());
-				for(Map.Entry<Integer, Double> entry : tempHash.entrySet())
+				
+				Hash.put(e.getKey(), e.getValue());
+				//nbrHash.remove(e.getKey());
+				while(Hash.size()!=0)
 				{
-					if(!miiaScore.containsKey(entry.getKey()) )
+					Hashtable<Integer, Double> tempHash = new Hashtable<Integer, Double>();
+					int maxkey = hS.maxKey(Hash);
+					miiaScore.put(maxkey, Hash.get(maxkey)); //put max every time
+					tempHash = hS.arr2Hash(Hash.get(maxkey), Graph.get(maxkey).neighborID, Graph.get(maxkey).activeProbability());
+					for(Map.Entry<Integer, Double> entry : tempHash.entrySet())
 					{
-						if(!Hash.containsKey(entry.getKey())) // put new
+						if(!miiaScore.containsKey(entry.getKey()) )
 						{
-							Hash.put(entry.getKey(), entry.getValue());
-						}
-						else if(entry.getValue() > Hash.get(entry.getKey()))// update 
-						{
-							Hash.remove(entry.getKey());
-							Hash.put(entry.getKey(), entry.getValue());
+							if(!Hash.containsKey(entry.getKey())) // put new
+							{
+								Hash.put(entry.getKey(), entry.getValue());
+							}
+							else if(entry.getValue() > Hash.get(entry.getKey()))// update 
+							{
+								Hash.remove(entry.getKey());
+								Hash.put(entry.getKey(), entry.getValue());
+							}
 						}
 					}
+					
+					Hash.remove(hS.maxKey(Hash));
 				}
 				
-				Hash.remove(hS.maxKey(Hash));
+				miiaScore.remove(targetID);
+				
+				
+				for(int key : miiaScore.keySet())
+				{
+					if(!nbrScore.containsKey(key))
+						nbrScore.put(key, 1.0);
+					else
+					{
+						nbrScore.put(key, nbrScore.get(key)+1.0);
+					}
+				}
+				miiaScore.clear();
+				miiaScore.put(targetID, 0.0);
 			}
-			return miiaScore;
+			return nbrScore;
 		}
 		
-		public void MiiaScoreUpdate(Hashtable<Integer, Double> scoreHash)
+		/*public void MiiaScoreUpdate(Hashtable<Integer, Double> scoreHash)
 		{
 			for(Map.Entry<Integer,Double> entry : scoreHash.entrySet())
 			{
@@ -220,7 +315,7 @@ import java.util.Map;
 				else
 					this.MIIAScore.put(entry.getKey(), entry.getValue());
 			}
-		}
+		}*/
 		
 		public ArrayList<Integer> string2Targets(String s)
 		{
@@ -243,7 +338,7 @@ import java.util.Map;
 			if(string2Targets(s).get(0) != 1 || string2Targets(s).get(1) != 100)
 				System.out.println("S2T error");
 		}
-		public ArrayList<Integer> getTopKMiiaScore(int k)
+		/*public ArrayList<Integer> getTopKMiiaScore(int k)
 		{
 			ArrayList<Integer> topKScoreKey = new ArrayList<Integer>();
 			for(int i = 0; i < k; i++)
@@ -253,7 +348,7 @@ import java.util.Map;
 				topKScoreKey.add(key);
 			}
 			return topKScoreKey;
-		}
+		}*/
 		
 		
 		/**
@@ -262,7 +357,7 @@ import java.util.Map;
 		 */
 		public static void main(String[] args) throws IOException {
 			System.out.println("Heuristic 2 for multi-target");
-			HeurMultiTarget2 hMt = new HeurMultiTarget2();
+			HeurMultiTarget3 hMt = new HeurMultiTarget3();
 			
 			hMt.setThreshold(0.1);
 			
@@ -286,7 +381,7 @@ import java.util.Map;
 				network = args[1];
 			if(args.length >= 3)
 				propnetwork = args[2];
-			int k = 3; //default
+			int k = 5; //default
 			if(args.length >= 4)
 				k = Integer.parseInt(args[3]);
 			if(args.length >= 5)

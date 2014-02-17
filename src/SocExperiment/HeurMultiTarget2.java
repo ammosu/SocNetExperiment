@@ -78,7 +78,7 @@ public class HeurMultiTarget2 {
 			}
 			
 			imt.clearActResult();
-			imt.createResult();
+			imt.createBinaryResult();
 			for(int j = 0; j < this.targets.size();j++)
 			{
 				for(Map.Entry<Integer, Double> e : MIIAalg(this.targets.get(j), imt.getGraph()).entrySet())
@@ -286,7 +286,7 @@ public class HeurMultiTarget2 {
 		System.out.println("Heuristic 2 for multi-target");
 		HeurMultiTarget2 hMt = new HeurMultiTarget2();
 		
-		hMt.setThreshold(0.1);
+		hMt.setThreshold(0.25);
 		
 		String TargetStr = "27210, 25704, 22883, 32792, 21773, 38395, 20859, 44903, 48409, 20506"; //default target
 		int MonteCarloTimes = 200;
@@ -308,7 +308,7 @@ public class HeurMultiTarget2 {
 			network = args[1];
 		if(args.length >= 3)
 			propnetwork = args[2];
-		int k = 3; //default
+		int k = 5; //default
 		if(args.length >= 4)
 			k = Integer.parseInt(args[3]);
 		if(args.length >= 5)

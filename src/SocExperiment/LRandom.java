@@ -49,8 +49,11 @@ public class LRandom {
 	    	}
 	    	
 	    }
+	    for(int i = 0; i < topKList.size()-1; i++)
+	    	System.out.print(topKList.get(i)+",");
+	    System.out.println(topKList.get(topKList.size()-1));
 	    
-	    System.out.println(topKList.toString());
+	    //System.out.println(topKList.toString());
 	    /*for(int i = 0; i < k; i++)
 	       if(i!=k-1)
 	    	   System.out.print(l.get(l.size()-i-1).getKey()+",");
