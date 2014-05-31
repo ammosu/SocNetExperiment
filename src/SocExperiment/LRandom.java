@@ -82,12 +82,8 @@ public class LRandom {
 	public static void main(String[] args) throws IOException {
 		//initialize targets
 		
-		String TargetStr = "27210, 25704, 22883, 32792, 21773, 38395, 20859, 44903, 48409, 20506"; //default target
-		ArrayList<Integer> Targets = new ArrayList<Integer>();
-		String[] str = TargetStr.split(", ");
-		for(int i = 0; i <str.length; i++)
-			Targets.add(Integer.parseInt(str[i]));
-		
+		String TargetStr = "30393,3497,1117,43716,11708,23237,23618,23632,36462,3278,22248,13908,28520,5490,19450,19711,42822,21494,34869,25688,22897,27889,5254,24147,7662,9555,23761,19168,10638,6327"; //default target
+		ArrayList<Integer> Targets = new HeurMultiTarget3().string2Targets(TargetStr);
 		
 		if(args.length >= 1)
 		{

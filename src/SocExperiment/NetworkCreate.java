@@ -47,8 +47,8 @@ public class NetworkCreate {
 		
 		NetworkCreate netcreate = new NetworkCreate();
 		
-		String networkPath = "C:\\Users\\mosu\\Desktop\\Brightkite_edges.txt";
-		String targetPath = "C:\\Users\\mosu\\Desktop\\Brightkite_edges_TV2.txt";
+		String networkPath = "com-dblp.ungraph.txt";
+		String targetPath = "C:\\Users\\mosu\\Desktop\\prop_TV2.txt";
 		
 		netcreate.set(networkPath, targetPath);
 		//netcreate.smallDataPrint("Brightkite_edges.txt", 20);

@@ -18,7 +18,7 @@ public class EvaluationIMT {
 			iMt.dataRead(network, false);
 		
 		iMt.setNodeset();
-		iMt.ReadPropagate(propNetwork);  //set propagation probability
+		iMt.ReadPropagate(propNetwork, 0);  //set propagation probability
 		
 		iMt.info();
 		/* Main Function */
@@ -49,13 +49,13 @@ public class EvaluationIMT {
 	public static void main(String[] args) throws IOException {
 		ArrayList<Integer> TargetIDs = new ArrayList<Integer>(); //default target
 		
-		int maxSteps = 5;
-		int MonteCarloTimes = 10000;
-		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_TV2.txt"; //default data
+		int maxSteps = 3;
+		int MonteCarloTimes = 1000;
+		String network = "com-dblp.ungraph.txt" , propnetwork = "prop_dblp"; //default data
 		int k = 9; //default
-		String[] seedStr = "1936, 1874, 44050, 38616, 43395".split(", ");
-		String[] seedStr2 = ", ".split(", ");
-		String[] tarStr = "27210, 25704, 22883, 32792, 21773, 38395, 20859, 44903, 48409, 20506".split(", ");   //input target string
+		String[] seedStr = "37678,14662,173256,33126,49097".split(",");
+		String[] seedStr2 = "14662,10971,74728,37678,33316".split(",");
+		String[] tarStr = "0,1,269,304".split(",");   //input target string
 		
 		for(int i = 0; i< tarStr.length; i++)
 			TargetIDs.add(Integer.parseInt(tarStr[i]));
@@ -105,8 +105,8 @@ public class EvaluationIMT {
 		
 		
 		EvaluationIMT evaImt = new EvaluationIMT();
-		for(int i = 1; i <= maxSteps ;i++)
-		evaImt.mainProcess(i, MonteCarloTimes, network, propnetwork, TargetIDs, seeds, seeds2);
+		//for(int i = 2; i <= maxSteps ;i++)
+		evaImt.mainProcess(maxSteps, MonteCarloTimes, network, propnetwork, TargetIDs, seeds, seeds2);
 
 	}
 

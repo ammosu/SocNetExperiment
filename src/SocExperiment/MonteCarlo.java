@@ -14,6 +14,12 @@ public class MonteCarlo {
 		neighborID = a;
 	}
 	
+	public MonteCarlo(ArrayList<Integer> a, ArrayList<Double> b)
+	{
+		neighborID = a;
+		probability = b;
+	}
+	
 	public void MonteCarlo_trim() {
 		neighborID.trimToSize();
 		in_Edge.trimToSize();
@@ -22,6 +28,16 @@ public class MonteCarlo {
 	public int size() {
 		return neighborID.size();
 	}
+	
+	public int addProb(double d)
+	{
+		int t = 0;
+		if(probability.size() == neighborID.size()-1)
+			t = -1;
+		probability.add(d);
+		return t;
+	}
+	
 	public ArrayList<Integer> activeNbr()
 	{
 		ArrayList<Integer> actNbrs = new ArrayList<Integer>();

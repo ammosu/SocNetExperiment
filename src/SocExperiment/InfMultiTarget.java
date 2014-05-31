@@ -8,6 +8,7 @@ public class InfMultiTarget {
 	private Hashtable<Integer, MonteCarlo> Graph = new Hashtable<Integer, MonteCarlo>(); // Graph
 	private ArrayList<Integer> nodeSet = new ArrayList<Integer>();  // all nodes
 	private ArrayList<Integer> seedSet = new ArrayList<Integer>();  // seeds
+	private Set<Integer> candidate = new HashSet<Integer>();
 	private Hashtable<Integer, Set<Integer>> BFSresult = new Hashtable<Integer, Set<Integer>>(); // all possible influence candidate (nbr -> candidate)
 	private ArrayList<Hashtable<Integer, Set<Integer>>> SingleTargetTables = new ArrayList<Hashtable<Integer, Set<Integer>>>(); // list of (nbr -> candidate)
 	private Hashtable<String, ArrayList<Hashtable<Integer, Set<Integer>>>> MultiTargetTables = new Hashtable<String, ArrayList<Hashtable<Integer, Set<Integer>>>>(); //target -> list(nbr -> candidate)
@@ -50,6 +51,30 @@ public class InfMultiTarget {
 		}
 	}
 	
+	public void ReadPropagate(String propfile, int i)
+	{
+		double d = 0.0;
+		String fileName = propfile;
+		try {
+			FileReader fr = new FileReader(fileName);
+			BufferedReader br = new BufferedReader(fr);
+			String line;
+			
+			while((line = br.readLine())!=null){
+				d = Double.parseDouble(line);
+				
+				if(this.Graph.get(this.nodeSet.get(i)).addProb(d)==-1) //probability full
+					i++;
+			}
+			br.close();
+			fr.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public void dataRead(String Filename, boolean isDuplication) //Read text and build network
 	{
 		int lineCount = 0;
@@ -194,6 +219,7 @@ public class InfMultiTarget {
 			next.clear();
 		}
 		bfsNodes.remove(targetID);
+		this.candidate.addAll(bfsNodes);
 		if(bfsNodes.size()!=0)
 			this.BFSresult.put(nodeID, bfsNodes);
 		//System.out.println("Neighbor No. "+ nodeID + " Size: " + bfsNodes.size());
@@ -404,15 +430,15 @@ public class InfMultiTarget {
 		{
 			double startTime, endTime;
 			startTime = System.currentTimeMillis();
-			for(int i = 0; i < this.nodeSet.size(); i++)
+			for(int cand : this.candidate)
 			{
-				if(targets.contains(this.nodeSet.get(i)) || seeds.contains(this.nodeSet.get(i))) //don't care ID = target or ID in seeds
+				if(targets.contains(cand) || seeds.contains(cand)) //don't care ID = target or ID in seeds
 					continue;
 				tempSeed.clear();
 				tempSeed.addAll(seeds);
 				//if(!seeds.contains(this.nodeSet.get(i))) //except and seeds
 				
-				tempSeed.add(this.nodeSet.get(i));
+				tempSeed.add(cand);
 				
 				setSeed(tempSeed); //edit seed
 				double i_value = MC_expectedTimes()/(double)times; //get value
@@ -420,12 +446,12 @@ public class InfMultiTarget {
 				if(i_value > maxValue) // record max value, id
 				{
 					maxValue = i_value;
-					maxNodeID = i;
+					maxNodeID = cand;
 				}
-				if( i%10000 == 0 )
-					System.out.print(".");
+					
 			}
-			seeds.add(this.nodeSet.get(maxNodeID));
+			System.out.print(".");
+			seeds.add(maxNodeID);
 			if(seeds.size()!=top_k)
 				System.out.println("\nmiddle result: "+maxValue);
 			if(seeds.size()==top_k)
@@ -455,6 +481,7 @@ public class InfMultiTarget {
 	public void showInformation(ArrayList<Integer> Targets)
 	{
 		double Max = 0.0;
+		int totalNbrs = 0;
 		for(int target : Targets)
 		{
 			ArrayList<Integer> nbrs = this.Graph.get(target).neighborID;
@@ -466,8 +493,10 @@ public class InfMultiTarget {
 				sum += prob;
 			}
 			Max += sum;
+			totalNbrs += nbrs.size();
 			System.out.println("Target ID: "+target+"\tSize: "+nbrs.size()+"\nMaximum Probability: "+sum+"\n");//+"\nNeighbors: "+nbrs.toString()
 		}
+		System.out.println("Total Neighbor size: "+ totalNbrs);
 		System.out.println("Upper Bound: "+ Max);
 		
 	}
@@ -734,11 +763,11 @@ public class InfMultiTarget {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		String TargetStr = "27210, 25704, 22883, 32792, 21773, 38395, 20859, 44903, 48409, 20506"; //default target
-		int MonteCarloTimes = 200;
-		int maxSteps = 1;
+		String TargetStr = "0,1,269,304"; //default target
+		int MonteCarloTimes = 10000;
+		int maxSteps = 3;
 		ArrayList<Integer> Targets = new ArrayList<Integer>();
-		String[] str = TargetStr.split(", ");
+		String[] str = TargetStr.split(",");
 		for(int i = 0; i <str.length; i++)
 			Targets.add(Integer.parseInt(str[i]));
 		
@@ -751,7 +780,7 @@ public class InfMultiTarget {
 				Targets.add(Integer.parseInt(a));
 		}
 		
-		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_TV2.txt"; //default data
+		String network = "com-dblp.ungraph.txt" , propnetwork = "prop_dblp"; //default data
 		
 		if(args.length >= 2)
 			network = args[1];
@@ -784,7 +813,7 @@ public class InfMultiTarget {
 		
 		
 		/**/
-		iMt.ReadPropagate(propnetwork);  //set propagation probability
+		iMt.ReadPropagate(propnetwork, 0);  //set propagation probability
 		iMt.info();
 		
 		//Targets = iMt.RandomTargets(5, 20);
@@ -807,7 +836,7 @@ public class InfMultiTarget {
 		//evaluation
 		
 		startTime = System.currentTimeMillis();
-
+		
 	}
 
 }

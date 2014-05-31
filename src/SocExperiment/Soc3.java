@@ -63,6 +63,27 @@ public class Soc3 {
 		}
 	}
 	
+	public void ReadPropagate(String propfile, int n)
+	{
+		double d = 0.0;
+		String fileName = propfile;
+		try {
+			FileReader fr = new FileReader(fileName);
+			BufferedReader br = new BufferedReader(fr);
+			String line;
+			while((line = br.readLine())!=null){
+				d = Double.parseDouble(line);
+				
+			}
+			br.close();
+			fr.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 
 	public void WritePropagate(String propfile) // write propagate graph to file
 	{

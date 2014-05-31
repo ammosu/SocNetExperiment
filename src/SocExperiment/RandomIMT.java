@@ -12,10 +12,10 @@ public class RandomIMT {
 	public static void main(String[] args) throws IOException {
 		
 		int MonteCarloTimes = 200;
-		int maxSteps = 10;
+		int maxSteps = 4;
 		
 		ArrayList<Integer> Targets = new ArrayList<Integer>();
-		int targetSize = 5; // default target size
+		int targetSize = 50; // default target size
 		
 		if(args.length >= 1)
 			targetSize = Integer.parseInt(args[0]);
@@ -58,7 +58,8 @@ public class RandomIMT {
 		iMt.ReadPropagate(propnetwork);  //set propagation probability
 		iMt.info();
 		
-		Targets = iMt.RandomTargets(0, targetSize); // target at least 5 nbrs
+		Targets = iMt.RandomTargets(3, targetSize); // target at least 5 nbrs
+		System.out.println("Targets: "+Targets);
 		
 		iMt.showInformation(Targets);  // show targets information
 		

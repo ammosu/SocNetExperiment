@@ -33,7 +33,7 @@ import java.util.Set;
 			InfMultiTarget iMt = new InfMultiTarget();
 			iMt.dataRead(network, isDuplica);  // read network structure
 			iMt.setNodeset();       // all nodes
-			iMt.ReadPropagate(propnetwork);  //set propagation probability
+			iMt.ReadPropagate(propnetwork, 0);  //set propagation probability
 			iMt.info();
 			
 			/*Main function*/
@@ -84,12 +84,12 @@ import java.util.Set;
 			ArrayList<Integer> stopArr = new ArrayList<Integer>();
 			//stopArr = new Heur2Soc().splitTimesArr(monteCarloTimes, k);
 			
-			stopArr.add(5);
+			stopArr.add(3);
 			stopArr.add(10);
-			stopArr.add(20);
-			stopArr.add(50);
+			stopArr.add(40);
+			stopArr.add(80);
 			stopArr.add(200);
-			
+			/**/
 			int stopIndex = 0;
 			
 			for(int i = 1; i <= monteCarloTimes; i++)
@@ -361,7 +361,7 @@ import java.util.Set;
 			
 			hMt.setThreshold(0.1);
 			
-			String TargetStr = "27210, 25704, 22883, 32792, 21773, 38395, 20859, 44903, 48409, 20506"; //default target
+			String TargetStr = "0,1,269,304"; //default target
 			int MonteCarloTimes = 200;
 			ArrayList<Integer> Targets = new ArrayList<Integer>();
 			Targets = hMt.string2Targets(TargetStr);
@@ -370,12 +370,12 @@ import java.util.Set;
 			if(args.length >= 1)
 			{
 				Targets.clear();
-				Targets = hMt.string2Targets(args[1]);
+				Targets = hMt.string2Targets(args[0]);
 			}
 			
 			hMt.setTargets(Targets);
 			
-			String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_TV2.txt"; //default data
+			String network = "com-dblp.ungraph.txt" , propnetwork = "prop_dblp"; //default data
 			
 			if(args.length >= 2)
 				network = args[1];

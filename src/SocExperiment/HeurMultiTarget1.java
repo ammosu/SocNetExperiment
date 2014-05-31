@@ -2,8 +2,10 @@ package SocExperiment;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Set;
 
 	public class HeurMultiTarget1 {
 		private double threshold = 0.1;
@@ -324,20 +326,23 @@ import java.util.Map;
 		 */
 		public static void main(String[] args) throws IOException {
 			System.out.println("Heuristic 1 for multi-target");
-			HeurMultiTarget3 hMt = new HeurMultiTarget3();
+			HeurMultiTarget1 hMt = new HeurMultiTarget1();
 			
 			hMt.setThreshold(0.1);
 			
-			String TargetStr = "27210, 25704, 22883, 32792, 21773, 38395, 20859, 44903, 48409, 20506"; //default target
+			String TargetStr = "27210,25704,22883,32792,21773,38395,20859,44903,48409,20506"; //default target
 			int MonteCarloTimes = 200;
 			ArrayList<Integer> Targets = new ArrayList<Integer>();
 			Targets = hMt.string2Targets(TargetStr);
-			
+			/*Set<Integer> t = new HashSet<Integer>();
+			t.addAll(Targets);
+			System.out.println(t.size());
+			*/
 			
 			if(args.length >= 1)
 			{
 				Targets.clear();
-				Targets = hMt.string2Targets(args[1]);
+				Targets = hMt.string2Targets(args[0]);
 			}
 			
 			hMt.setTargets(Targets);
