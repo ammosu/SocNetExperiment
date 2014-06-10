@@ -12,6 +12,8 @@ public class InfMultiTarget {
 	private Hashtable<Integer, Set<Integer>> BFSresult = new Hashtable<Integer, Set<Integer>>(); // all possible influence candidate (nbr -> candidate)
 	private ArrayList<Hashtable<Integer, Set<Integer>>> SingleTargetTables = new ArrayList<Hashtable<Integer, Set<Integer>>>(); // list of (nbr -> candidate)
 	private Hashtable<String, ArrayList<Hashtable<Integer, Set<Integer>>>> MultiTargetTables = new Hashtable<String, ArrayList<Hashtable<Integer, Set<Integer>>>>(); //target -> list(nbr -> candidate)
+	private Hashtable<Integer, Integer> totalAcceptanceTimes_MC = new Hashtable<Integer, Integer>();  // node id -> total acceptance times in # MC times 
+	private ArrayList<Integer> targetList = new ArrayList<Integer>();
 	
 	public void setSeed(ArrayList<Integer> seeds)
 	{
@@ -28,6 +30,22 @@ public class InfMultiTarget {
 		return this.nodeSet;
 	}
 	
+	public void targetReader(String targetfile) throws IOException
+	{
+		FileReader fr;
+		try {
+			fr = new FileReader(targetfile);
+			BufferedReader br = new BufferedReader(fr);
+			while(br.ready())
+			{
+				this.targetList.add(Integer.parseInt(br.readLine()));
+			}
+			br.close();
+			fr.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
 	public void ReadPropagate(String propfile) throws IOException  // read propagate file and write to propagate graph
 	{
 		FileReader fr;
@@ -51,7 +69,7 @@ public class InfMultiTarget {
 		}
 	}
 	
-	public void ReadPropagate(String propfile, int i)
+	public void ReadPropagate(String propfile, int i) // read matlab created power-law file
 	{
 		double d = 0.0;
 		String fileName = propfile;
@@ -72,6 +90,16 @@ public class InfMultiTarget {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public void ReadPropgate_WC(String propfile) throws IOException
+	{
+		for(int node : this.nodeSet)
+		{
+			int size = this.Graph.get(node).neighborID.size();
+			for(int i = 0; i < size; i++)
+				this.Graph.get(node).probability.add(1/(double)(size));
 		}
 	}
 
@@ -201,23 +229,40 @@ public class InfMultiTarget {
 		now.add(nodeID);
 		//System.out.println(".");
 		int stepcount = 1;
-		
-		while(now.size() != 0 && stepcount < maxSteps)
-		{
-			stepcount++ ;
-			Iterator<Integer> it = now.iterator(); //current layer
-			
-			while(it.hasNext())
+		if(maxSteps != -1)
+			while(now.size() != 0 && stepcount < maxSteps)
 			{
-				next.addAll(this.Graph.get(it.next()).activeNbr()); // next layer
+				stepcount++ ;
+				Iterator<Integer> it = now.iterator(); //current layer
+				
+				while(it.hasNext())
+				{
+					next.addAll(this.Graph.get(it.next()).activeNbr()); // next layer
+				}
+				next.removeAll(bfsNodes); // remember all node from next layer
+				next.remove(targetID); // don't remember target node
+				now.clear(); 
+				now.addAll(next);
+				bfsNodes.addAll(next);
+				next.clear();
 			}
-			next.removeAll(bfsNodes); // remember all node from next layer
-			next.remove(targetID); // don't remember target node
-			now.clear(); 
-			now.addAll(next);
-			bfsNodes.addAll(next);
-			next.clear();
-		}
+		else
+			while(now.size() != 0)
+			{
+				stepcount++ ;
+				Iterator<Integer> it = now.iterator(); //current layer
+				
+				while(it.hasNext())
+				{
+					next.addAll(this.Graph.get(it.next()).activeNbr()); // next layer
+				}
+				next.removeAll(bfsNodes); // remember all node from next layer
+				next.remove(targetID); // don't remember target node
+				now.clear(); 
+				now.addAll(next);
+				bfsNodes.addAll(next);
+				next.clear();
+			}
 		bfsNodes.remove(targetID);
 		this.candidate.addAll(bfsNodes);
 		if(bfsNodes.size()!=0)
@@ -393,18 +438,17 @@ public class InfMultiTarget {
 			return 0.0;
 		}
 		
-					
 		for(String mKey : this.MultiTargetTables.keySet()) //string mKey = target,MonteCarloTimes
 		{
 			int nbrsize = this.MultiTargetTables.get(mKey).size();
 			for(int i = 0; i< nbrsize; i++)
 			{
-				 Hashtable<Integer, Set<Integer>> hash = this.MultiTargetTables.get(mKey).get(i); // nbr->candidate
-				 for(int j : hash.keySet())
+				  // nbr->candidate
+				 for(int j : this.MultiTargetTables.get(mKey).get(i).keySet())
 				 {
 					 Set<Integer> a = new HashSet<Integer>();
 					 a.addAll(this.seedSet);
-					 if(hasIntersection(a ,hash.get(j)))
+					 if(hasIntersection(a ,this.MultiTargetTables.get(mKey).get(i).get(j)))
 						 expectAccTimes+=1.0;
 						 
 				 }
@@ -763,10 +807,13 @@ public class InfMultiTarget {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		String TargetStr = "0,1,269,304"; //default target
+		
 		int MonteCarloTimes = 10000;
-		int maxSteps = 3;
+		int maxSteps = 5;
+		
 		ArrayList<Integer> Targets = new ArrayList<Integer>();
+		
+		String TargetStr = "0,1,269,304,23671,178,47340,2675,119672,246255"; //default target
 		String[] str = TargetStr.split(",");
 		for(int i = 0; i <str.length; i++)
 			Targets.add(Integer.parseInt(str[i]));
@@ -780,7 +827,7 @@ public class InfMultiTarget {
 				Targets.add(Integer.parseInt(a));
 		}
 		
-		String network = "com-dblp.ungraph.txt" , propnetwork = "prop_dblp"; //default data
+		String network = "com-dblp.ungraph.txt" , propnetwork = "prop_dblp_8020"; //default data
 		
 		if(args.length >= 2)
 			network = args[1];
