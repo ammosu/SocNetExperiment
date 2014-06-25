@@ -463,7 +463,7 @@ public class InfMultiTarget {
 	{
 		ArrayList<Integer> seeds = new ArrayList<Integer>(); // found seed
 		ArrayList<Integer> tempSeed = new ArrayList<Integer>();  // add a candidate to seeds 
-		
+		double time = 0.0;
 		
 		createBFSTables(times, targets, maxSteps);
 		//showHash();
@@ -487,12 +487,14 @@ public class InfMultiTarget {
 				setSeed(tempSeed); //edit seed
 				double i_value = MC_expectedTimes()/(double)times; //get value
 				
+				
+				tempSeed.add(cand);
+				
 				if(i_value > maxValue) // record max value, id
 				{
 					maxValue = i_value;
 					maxNodeID = cand;
 				}
-					
 			}
 			System.out.print(".");
 			seeds.add(maxNodeID);
@@ -808,12 +810,12 @@ public class InfMultiTarget {
 	 */
 	public static void main(String[] args) throws IOException {
 		
-		int MonteCarloTimes = 10000;
+		int MonteCarloTimes = 100;
 		int maxSteps = 5;
 		
 		ArrayList<Integer> Targets = new ArrayList<Integer>();
 		
-		String TargetStr = "0,1,269,304,23671,178,47340,2675,119672,246255"; //default target
+		String TargetStr = "0,246255"; //default target
 		String[] str = TargetStr.split(",");
 		for(int i = 0; i <str.length; i++)
 			Targets.add(Integer.parseInt(str[i]));

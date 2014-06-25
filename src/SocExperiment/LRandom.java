@@ -85,7 +85,7 @@ public class LRandom {
 		String TargetStr = "30393,3497,1117,43716,11708,23237,23618,23632,36462,3278,22248,13908,28520,5490,19450,19711,42822,21494,34869,25688,22897,27889,5254,24147,7662,9555,23761,19168,10638,6327"; //default target
 		ArrayList<Integer> Targets = new HeurMultiTarget3().string2Targets(TargetStr);
 		
-		if(args.length >= 1)
+		if(args.length >= 1 && !args[0].equals("target"))
 		{
 			Targets.clear();
 			String s = args[0];
@@ -115,7 +115,12 @@ public class LRandom {
 		System.out.println("Network: "+propnetwork);
 		
 		
-		InfMultiTarget iMt = new InfMultiTarget();
+		SA_greedy iMt = new SA_greedy();
+		if(args.length>=1 && args[0].equals("target"))
+		{
+			iMt.targetReader("target");
+			Targets = iMt.getTarget();
+		}
 		
 		iMt.dataRead(network, isDuplica);  // read network structure
 		iMt.setNodeset();       // all nodes
@@ -123,7 +128,7 @@ public class LRandom {
 		
 		
 		/**/
-		iMt.ReadPropagate(propnetwork);  //set propagation probability
+		iMt.ReadPropagate(propnetwork, 0);  //set propagation probability
 		iMt.info();
 		
 		//Targets = iMt.RandomTargets(5, 20);

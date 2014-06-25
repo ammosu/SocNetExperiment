@@ -1,3 +1,7 @@
+/***********************************/
+/**      SAB Algorithm            **/
+/***********************************/
+
 package SocExperiment;
 
 import java.io.IOException;
@@ -10,11 +14,6 @@ import java.util.Set;
 
 	public class HeurMultiTarget3 {
 		private double threshold = 0.1;
-		//private ArrayList<Integer> candidate = new ArrayList<Integer>();
-		//private Hashtable<Integer, ArrayList<Double>> MiiaScore = new Hashtable<Integer, ArrayList<Double>>();
-		
-		//private Hashtable<Integer, Double> MIIAScore = new Hashtable<Integer, Double>();
-		//private ArrayList<Integer> candidate = new ArrayList<Integer>();
 		private ArrayList<Integer> targets = new ArrayList<Integer>();
 		
 		private Hashtable<Integer, Double[]> MIIAArrScore = new Hashtable<Integer, Double[]>(); // node -> score array
@@ -30,7 +29,7 @@ import java.util.Set;
 			if(network.equals("Brightkite_edges.txt"))
 				isDuplica = false;
 			
-			InfMultiTarget iMt = new InfMultiTarget();
+			SA_greedy iMt = new SA_greedy();
 			iMt.dataRead(network, isDuplica);  // read network structure
 			iMt.setNodeset();       // all nodes
 			iMt.ReadPropagate(propnetwork, 0);  //set propagation probability
@@ -39,12 +38,12 @@ import java.util.Set;
 			/*Main function*/
 			
 			this.targets = targets;
-			initRTV(iMt); // initialize values that dependent on target
+			this.initRTV(iMt); // initialize values that dependent on target
 			
 			
 			MiiaScore(iMt, MonteCarloTimes, k);
 		}
-		public void initRTV(InfMultiTarget im)
+		public void initRTV(SA_greedy im)
 		{
 			if(this.targets.size() == 0)
 				System.out.println("Targets not initialize");
@@ -78,28 +77,28 @@ import java.util.Set;
 			for(int i = 0; i < a.length; i++)
 				this.remainTargetScore[i] -= a[i]/(double)mcScale;
 		}*/
-		public void MiiaScore(InfMultiTarget imt, int monteCarloTimes, int k)  
+		public void MiiaScore(SA_greedy iMt, int monteCarloTimes, int k)  
 		{
 			//ArrayList<Integer> allnodes = imt.getNodes(); // all nodes
 			ArrayList<Integer> stopArr = new ArrayList<Integer>();
 			//stopArr = new Heur2Soc().splitTimesArr(monteCarloTimes, k);
 			
 			stopArr.add(3);
+			stopArr.add(5);
 			stopArr.add(10);
 			stopArr.add(40);
 			stopArr.add(80);
-			stopArr.add(200);
 			/**/
 			int stopIndex = 0;
 			
 			for(int i = 1; i <= monteCarloTimes; i++)
 			{
-				imt.clearActResult();
-				imt.createBinaryResult();
+				iMt.clearActResult();
+				iMt.createBinaryResult();
 				
 				for(int j = 0; j < this.targets.size();j++) // for all target calculate influence score
 				{
-					Hashtable<Integer, Double> mipHash = MIIAalg(this.targets.get(j), imt.getGraph(), j);
+					Hashtable<Integer, Double> mipHash = MIIAalg(this.targets.get(j), iMt.getGraph(), j);
 					for(Map.Entry<Integer, Double> e : mipHash.entrySet())
 					{
 						if(this.MIIAArrScore.keySet().contains(e.getKey())) //<- already scoring
@@ -356,18 +355,21 @@ import java.util.Set;
 		 * @throws IOException 
 		 */
 		public static void main(String[] args) throws IOException {
-			System.out.println("Heuristic 2 for multi-target");
+			int maxSteps = 5;
+			int MonteCarloTimes = 10;
+			System.out.println("SAB for multi-target");
+			
 			HeurMultiTarget3 hMt = new HeurMultiTarget3();
 			
 			hMt.setThreshold(0.1);
 			
 			String TargetStr = "0,1,269,304"; //default target
-			int MonteCarloTimes = 200;
+			
 			ArrayList<Integer> Targets = new ArrayList<Integer>();
 			Targets = hMt.string2Targets(TargetStr);
 			
 			
-			if(args.length >= 1)
+			if(args.length >= 1 && !args[0].equals("target"))
 			{
 				Targets.clear();
 				Targets = hMt.string2Targets(args[0]);
@@ -375,7 +377,7 @@ import java.util.Set;
 			
 			hMt.setTargets(Targets);
 			
-			String network = "com-dblp.ungraph.txt" , propnetwork = "prop_dblp"; //default data
+			String network = "com-dblp.ungraph.txt" , propnetwork = "prop_dblp_8020"; //default data
 			
 			if(args.length >= 2)
 				network = args[1];
@@ -386,10 +388,22 @@ import java.util.Set;
 				k = Integer.parseInt(args[3]);
 			if(args.length >= 5)
 				MonteCarloTimes = Integer.parseInt(args[4]);
-		
-			//ArrayList<Integer> StopArray = new Heur2Soc().splitTimesArr(MonteCarloTimes, k);
+			if(args.length >= 6)
+				maxSteps = Integer.parseInt(args[5]);
 			
-			System.out.println("Targets: "+Targets.toString());
+			//ArrayList<Integer> StopArray = new Heur2Soc().splitTimesArr(MonteCarloTimes, k);
+			SA_greedy iMt = new SA_greedy();
+			if(args.length>=1 && args[0].equals("target"))
+			{
+				iMt.targetReader("target");
+				Targets = iMt.getTarget();
+			}
+			
+			if(Targets.size()<50)
+				System.out.println("\nTargets: "+Targets.toString()+"\nMax step: "+maxSteps);
+			else
+				System.out.println("\nTargets: ["+Targets.get(0)+", "+Targets.get(1)+", ..., "+Targets.get(Targets.size()-1)+"]\nTarget size: "+Targets.size()+"\nMax step: "+maxSteps);
+			
 			double startTime, endTime, totalTime;
 			
 			startTime = System.currentTimeMillis();

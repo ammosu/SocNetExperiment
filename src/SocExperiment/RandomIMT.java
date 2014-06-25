@@ -2,6 +2,8 @@ package SocExperiment;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class RandomIMT {
 	
@@ -20,7 +22,7 @@ public class RandomIMT {
 		if(args.length >= 1)
 			targetSize = Integer.parseInt(args[0]);
 		
-		String network = "Brightkite_edges.txt" , propnetwork = "Brightkite_edges_TV2.txt"; //default data
+		String network = "com-dblp.ungraph.txt" , propnetwork = "Brightkite_edges_TV2.txt"; //default data
 		
 		if(args.length >= 2)
 			network = args[1];
@@ -52,9 +54,15 @@ public class RandomIMT {
 		iMt.dataRead(network, isDuplica);  // read network structure
 		iMt.setNodeset();       // all nodes
 		//iMt.test();
+		Set<Integer> set = new HashSet<Integer>();
+		while(set.size()!=3000)
+		{
+			set.clear();
+			set.addAll(iMt.RandomTargets(3, 3030));
+		}
+		System.out.println(set);
 		
-		
-		/**/
+		/*
 		iMt.ReadPropagate(propnetwork);  //set propagation probability
 		iMt.info();
 		
@@ -77,7 +85,7 @@ public class RandomIMT {
 		//evaluation
 		
 		startTime = System.currentTimeMillis();
-
+*/
 
 	}
 
